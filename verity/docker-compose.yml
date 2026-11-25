@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - STORAGE_DIR=/tmp/verity
+      - ML_ENABLED=${ML_ENABLED:-true}
+      - ML_MODEL_ID=${ML_MODEL_ID:-umm-maybe/AI-image-detector}
+      - ML_DEVICE=${ML_DEVICE:-cpu}
+      - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+      - RETENTION_MINUTES=${RETENTION_MINUTES:-60}
+    volumes:
+      - verity-uploads:/tmp/verity
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  verity-uploads:

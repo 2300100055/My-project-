@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "verity-backend"
+version = "0.1.0"
+description = "Verity AI content authenticity analyzer — backend"
+authors = ["Verity Team"]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+pydantic = "^2.9.0"
+pydantic-settings = "^2.6.0"
+python-multipart = "^0.0.17"
+aiofiles = "^24.1.0"
+httpx = "^0.28.0"
+Pillow = "^11.0.0"
+numpy = "^2.1.0"
+scipy = "^1.14.0"
+opencv-python-headless = "^4.10.0"
+exifread = "^3.0.0"
+python-magic = "^0.4.27"
+transformers = "^4.46.0"
+torch = {version = "^2.5.0", optional = true}
+torchvision = {version = "^0.20.0", optional = true}
+ffmpeg-python = "^0.2.0"
+reportlab = "^4.2.0"
+slowapi = "^0.1.9"
+structlog = "^24.4.0"
+
+[tool.poetry.extras]
+ml = ["torch", "torchvision"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.0"
+ruff = "^0.8.0"
+mypy = "^1.13.0"
+pip-audit = "^2.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "B", "A"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

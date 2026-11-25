@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-text-primary font-sans;
+    background-color: #ffffff;
+  }
+
+  /* Focus rings — WCAG AA */
+  :focus-visible {
+    outline: 2px solid #0071E3;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-card shadow-card border border-black/5;
+  }
+
+  .card-surface {
+    @apply bg-surface rounded-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-accent text-white font-medium text-[15px] rounded-pill
+           transition-all duration-200 ease-out
+           hover:bg-accent-hover active:scale-[0.98]
+           focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-transparent text-accent font-medium text-[15px] rounded-pill
+           border border-accent/30
+           transition-all duration-200 ease-out
+           hover:bg-accent/5 active:scale-[0.98]
+           focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
+  }
+
+  /* Frosted nav */
+  .nav-frosted {
+    @apply backdrop-blur-xl bg-white/80 border-b border-black/8;
+  }
+
+  /* Confidence bar */
+  .confidence-bar {
+    @apply h-1.5 rounded-full bg-black/8 overflow-hidden;
+  }
+
+  .confidence-bar-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+}
