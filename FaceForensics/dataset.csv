@@ -1,0 +1,9 @@
+id,source,generator,type,verdict,confidence,description
+1,FaceForensics++,DeepFaceLab,face_swap,FAKE,98.8,Autoencoder face swap with boundary blending artifacts
+2,GenImage,Midjourney v6,diffusion,FAKE,96.4,Latent diffusion synthesis with characteristic noise patterns
+3,FFHQ,StyleGAN3,gan_synthesis,FAKE,97.5,Neural facial synthesis with periodic frequency artifacts
+4,WildDeepfake,Roop/ReActor,face_swap,FAKE,97.0,InsightFace latent swap with jawline boundary artifacts
+5,FaceForensics++,Face2Face,expression_transfer,FAKE,94.2,Expression retargeting with perioral region warping
+6,GenImage,Stable Diffusion XL,diffusion,FAKE,95.8,Diffusion spatial grid residuals detected
+7,DFDC,FaceShifter,face_swap,FAKE,96.1,Adaptive face swap with lighting mismatch
+8,GenImage,DALL-E 3,diffusion,FAKE,93.5,Text-to-image diffusion with unnatural micro-textures
