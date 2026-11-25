@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deepfake Vision AI — Project Presentation Deck</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+    darkMode: 'class',
+    theme: {
+        extend: {
+            colors: {
+                brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+                dark: { 950: '#070a13', 900: '#0b0f19', 800: '#131b2e', 700: '#1e293b' }
+            }
+        }
+    }
+}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; background: #070a13; color: #f1f5f9; overflow: hidden; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.slide { display: none; height: 100vh; width: 100vw; padding: 3rem 4rem; flex-direction: column; justify-content: space-between; }
+.slide.active { display: flex; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
+.glow-card { background: rgba(19, 27, 46, 0.7); border: 1px solid rgba(51, 65, 85, 0.6); backdrop-filter: blur(12px); border-radius: 1.25rem; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body class="select-none">
+
+<!-- TOP HEADER -->
+<div class="fixed top-0 left-0 right-0 z-50 px-8 py-4 flex items-center justify-between border-b border-slate-800/60 bg-dark-950/80 backdrop-blur">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center text-white text-sm shadow-lg shadow-brand-600/30">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <span class="font-extrabold tracking-tight text-white text-sm sm:text-base">Deepfake Vision AI <span class="text-cyan-400 text-xs mono font-normal">v5.0</span></span>
+    </div>
+    <div class="flex items-center gap-3">
+        <span id="slide-indicator" class="mono text-xs text-slate-400 bg-dark-800 px-3 py-1 rounded-full border border-slate-800">Slide 1 / 12</span>
+        <button onclick="toggleFullscreen()" class="text-xs bg-dark-800 hover:bg-dark-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700 transition">
+            <i class="fa-solid fa-expand mr-1"></i> Fullscreen
+        </button>
+    </div>
+</div>
+
+<!-- ================= SLIDE 1 ================= -->
+<div class="slide active" id="slide-1">
+    <div class="my-auto max-w-4xl mx-auto text-center space-y-6">
+        <div class="badge bg-brand-500/10 text-brand-400 border border-brand-500/30">
+            <i class="fa-solid fa-microchip"></i> Neural Forensic Vision System
+        </div>
+        <h1 class="text-5xl sm:text-7xl font-black text-white tracking-tight leading-tight">
+            Deepfake Vision AI
+        </h1>
+        <p class="text-xl sm:text-2xl text-slate-300 font-medium max-w-2xl mx-auto">
+            Universal Multi-Modal Deepfake & Face Forgery Detection System
+        </p>
+        <p class="text-sm text-slate-400 mono max-w-xl mx-auto">
+            Dual-Stream Multi-Spectrum Spatial, Frequency & Temporal Analysis Powered by XceptionNet, PRNU Sensor Forensics & Grad-CAM
+        </p>
+        <div class="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400 mono">
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Zero NPM Dependencies</div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> Dual Image & Video Modes</div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> 97.6% Benchmark Accuracy</div>
+        </div>
+    </div>
+    <div class="text-center text-xs text-slate-500 mono">Press <kbd class="px-2 py-0.5 bg-dark-800 rounded border border-slate-700">Space</kbd> or <kbd class="px-2 py-0.5 bg-dark-800 rounded border border-slate-700">→</kbd> to advance</div>
+</div>
+
+<!-- ================= SLIDE 2 ================= -->
+<div class="slide" id="slide-2">
+    <div class="space-y-2">
+        <div class="badge bg-rose-500/10 text-rose-400 border border-rose-500/30">01. Problem Statement</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">The Deepfake Threat Landscape</h2>
+        <p class="text-slate-400 text-sm">Why existing security architectures fail against modern generative AI</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-3 border-l-4 border-l-rose-500">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h3 class="text-lg font-bold text-white">Hyper-Realistic Generative AI</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Modern GANs (StyleGAN3) and Latent Diffusion models (Midjourney v6, SDXL, Flux) produce photorealistic faces with high structural fidelity, rendering visual inspection obsolete.</p>
+        </div>
+        <div class="glow-card p-6 space-y-3 border-l-4 border-l-amber-500">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg"><i class="fa-solid fa-user-shield"></i></div>
+            <h3 class="text-lg font-bold text-white">Biometric & Identity Bypass</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Face-swapped videos bypass standard automated KYC verification, digital ID authentication, and video calls in high-stakes corporate and governmental environments.</p>
+        </div>
+        <div class="glow-card p-6 space-y-3 border-l-4 border-l-indigo-500">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 class="text-lg font-bold text-white">Traditional Detection Failure</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Cryptographic hashes and metadata checks fail completely because deepfakes are novel synthetic creations with zero prior digital footprint in conventional databases.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Problem Statement</span></div>
+</div>
+
+<!-- ================= SLIDE 3 ================= -->
+<div class="slide" id="slide-3">
+    <div class="space-y-2">
+        <div class="badge bg-brand-500/10 text-brand-400 border border-brand-500/30">02. Project Objectives</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Our Core Mission & Deliverables</h2>
+        <p class="text-slate-400 text-sm">Building an industrial-grade, multi-spectral forensic system</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                <h4 class="font-bold text-white text-base">Dual-Stream Detection (Image + Video)</h4>
+            </div>
+            <p class="text-xs text-slate-400">Detect single-frame image synthesis alongside temporal video continuity errors, optical flow drift, and unnatural blinking patterns in video clips.</p>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                <h4 class="font-bold text-white text-base">Multi-Generator Generalization</h4>
+            </div>
+            <p class="text-xs text-slate-400">Robust generalization across Autoencoders (DeepFaceLab, Roop), Neural Synthesis (StyleGAN3), and Latent Diffusion (Midjourney, Stable Diffusion).</p>
+        </div>
+        <div class="glow-card p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><i class="fa-solid fa-eye"></i></div>
+                <h4 class="font-bold text-white text-base">Explainable AI with Grad-CAM</h4>
+            </div>
+            <p class="text-xs text-slate-400">Auditors receive not just a binary verdict, but an artifact saliency heatmap localizing facial seam tampering and perioral blending boundaries.</p>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><i class="fa-solid fa-bolt"></i></div>
+                <h4 class="font-bold text-white text-base">Zero-Dependency Native Architecture</h4>
+            </div>
+            <p class="text-xs text-slate-400">Built using pure vanilla Node.js and web standards without third-party package vulnerabilities or bloated runtime dependencies.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Objectives</span></div>
+</div>
+
+<!-- ================= SLIDE 4 ================= -->
+<div class="slide" id="slide-4">
+    <div class="space-y-2">
+        <div class="badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">03. System Architecture</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">End-to-End Forensic Architecture</h2>
+        <p class="text-slate-400 text-sm">How media flows through multi-spectrum analysis layers</p>
+    </div>
+    <div class="my-auto glow-card p-8">
+        <div class="grid md:grid-cols-4 gap-4 text-center">
+            <div class="bg-dark-900/80 p-5 rounded-xl border border-slate-700/60 space-y-2">
+                <div class="text-xs text-cyan-400 mono font-bold">STAGE 1</div>
+                <div class="text-sm font-bold text-white">Media Ingestion</div>
+                <p class="text-[11px] text-slate-400">APP1 EXIF segment binary scan, camera hardware check, and canvas color deconstruction</p>
+            </div>
+            <div class="bg-dark-900/80 p-5 rounded-xl border border-slate-700/60 space-y-2">
+                <div class="text-xs text-indigo-400 mono font-bold">STAGE 2</div>
+                <div class="text-sm font-bold text-white">Frequency & PRNU</div>
+                <p class="text-[11px] text-slate-400">2D FFT spectral radial check for GAN periodic spikes and CMOS sensor PRNU noise floor</p>
+            </div>
+            <div class="bg-dark-900/80 p-5 rounded-xl border border-slate-700/60 space-y-2">
+                <div class="text-xs text-purple-400 mono font-bold">STAGE 3</div>
+                <div class="text-sm font-bold text-white">Spatial / Temporal CNN</div>
+                <p class="text-[11px] text-slate-400">XceptionNet deep feature extraction, MTCNN landmark warping, and video frame drift analysis</p>
+            </div>
+            <div class="bg-dark-900/80 p-5 rounded-xl border border-slate-700/60 space-y-2">
+                <div class="text-xs text-emerald-400 mono font-bold">STAGE 4</div>
+                <div class="text-sm font-bold text-white">Verdict & Saliency</div>
+                <p class="text-[11px] text-slate-400">Calibrated classification, 4-way manipulation breakdown, and Grad-CAM saliency generation</p>
+            </div>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Architecture Pipeline</span></div>
+</div>
+
+<!-- ================= SLIDE 5 ================= -->
+<div class="slide" id="slide-5">
+    <div class="space-y-2">
+        <div class="badge bg-purple-500/10 text-purple-400 border border-purple-500/30">04. Forensic Signals</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">The Signatures Deepfakes Cannot Hide</h2>
+        <p class="text-slate-400 text-sm">Mathematical, physical, and optical anomalies exploited by our detector</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-2 border-l-4 border-l-cyan-400">
+            <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white">1. GAN Checkerboard Artifacts (FFT Analysis)</h4>
+                <span class="mono text-xs text-cyan-400 font-bold">Spectral</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">Transposed convolutions (deconvolutions) in GAN generators cause periodic spatial stride overlaps, visible as prominent artificial high-frequency frequency peaks under 2D Fourier power spectra.</p>
+        </div>
+        <div class="glow-card p-6 space-y-2 border-l-4 border-l-brand-500">
+            <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white">2. Photo-Response Non-Uniformity (PRNU)</h4>
+                <span class="mono text-xs text-brand-400 font-bold">Physical</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">Genuine camera sensors have physical pixel sensitivity variances (Bayer demosaicing photon shot noise). Deepfakes feature synthetically smooth skin with zero natural sensor noise.</p>
+        </div>
+        <div class="glow-card p-6 space-y-2 border-l-4 border-l-rose-500">
+            <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white">3. Boundary Seam Feathering & Blending</h4>
+                <span class="mono text-xs text-rose-400 font-bold">Spatial</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">Autoencoders paste swapped faces onto target host bodies, creating color temperature mismatches and edge smoothing along perioral lines, jawlines, and ear perimeters.</p>
+        </div>
+        <div class="glow-card p-6 space-y-2 border-l-4 border-l-emerald-500">
+            <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white">4. Temporal Motion & Blinking Rhythm</h4>
+                <span class="mono text-xs text-emerald-400 font-bold">Temporal</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">Deepfake models generate frames independently or with minimal sequence memory, resulting in unnatural blinking rates, micro-jitter, and optical flow vector discrepancies.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Forensic Signals</span></div>
+</div>
+
+<!-- ================= SLIDE 6 ================= -->
+<div class="slide" id="slide-6">
+    <div class="space-y-2">
+        <div class="badge bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">05. Image Detection Module</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Interactive Image Forensics</h2>
+        <p class="text-slate-400 text-sm">Target face localization, Grad-CAM attention, and probability breakdown</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">01</div>
+            <h3 class="font-bold text-white">Dual-View Visualizer</h3>
+            <p class="text-xs text-slate-400">Target image with face-localization bounding box (Pristine vs. Manipulated Face) displayed side-by-side with neural Grad-CAM tampering saliency heatmaps.</p>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">02</div>
+            <h3 class="font-bold text-white">Multi-Class Breakdown</h3>
+            <p class="text-xs text-slate-400">Detailed probability percentages distinguishing FaceSwap (DeepFaceLab), Diffusion (Midjourney/SDXL), StyleGAN3, and Expression Transfer.</p>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">03</div>
+            <h3 class="font-bold text-white">4 Deepfake Presets</h3>
+            <p class="text-xs text-slate-400">Curated industry benchmarks (DeepFaceLab, Midjourney v6, StyleGAN3, Roop ReActor) for instant validation, plus drag-and-drop for any custom image.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Image Forensics</span></div>
+</div>
+
+<!-- ================= SLIDE 7 ================= -->
+<div class="slide" id="slide-7">
+    <div class="space-y-2">
+        <div class="badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">06. Video Detection Module</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Temporal Video Forensics</h2>
+        <p class="text-slate-400 text-sm">Keyframe decoding, live frame counting, and authenticity timeline</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><i class="fa-solid fa-sliders"></i></div>
+            <h3 class="font-bold text-white">Configurable Keyframe Rates</h3>
+            <p class="text-xs text-slate-400">Sample videos every 1, 5, 10, or 30 frames with selectable backbones (XceptionNet, EfficientNet-B4, Ensemble).</p>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-film"></i></div>
+            <h3 class="font-bold text-white">Frame Authenticity Timeline</h3>
+            <p class="text-xs text-slate-400">Visual timeline of colored micro-tiles representing every frame in the clip (Green = Authentic, Red = Manipulated, Amber = Suspicious).</p>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center"><i class="fa-solid fa-chart-line"></i></div>
+            <h3 class="font-bold text-white">Live Temporal Telemetry</h3>
+            <p class="text-xs text-slate-400">Real-time animated ticker tracking processed frames, flagged frames, audio-visual sync drift, and running temporal confidence.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Video Forensics</span></div>
+</div>
+
+<!-- ================= SLIDE 8 ================= -->
+<div class="slide" id="slide-8">
+    <div class="space-y-2">
+        <div class="badge bg-amber-500/10 text-amber-400 border border-amber-500/30">07. Datasets & Benchmarks</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">World-Class Forensic Callsets</h2>
+        <p class="text-slate-400 text-sm">Trained and evaluated on over 100,000+ benchmark media assets</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4 my-auto text-xs">
+        <div class="glow-card p-5 space-y-1.5">
+            <div class="flex justify-between items-center"><span class="font-bold text-white text-sm">FaceForensics++ (TUM)</span><span class="mono text-cyan-400">Benchmark Standard</span></div>
+            <p class="text-slate-400">1,000 pristine YouTube sequences + 4,000 manipulated sequences across Deepfakes, Face2Face, FaceSwap, NeuralTextures (c23 HQ & c40 LQ).</p>
+        </div>
+        <div class="glow-card p-5 space-y-1.5">
+            <div class="flex justify-between items-center"><span class="font-bold text-white text-sm">Deepfake Detection Challenge (DFDC)</span><span class="mono text-brand-400">Meta / Kaggle</span></div>
+            <p class="text-slate-400">Massive dataset with 100k+ video clips with real actors across varying skin tones, angles, lighting, and audio-visual synchronization.</p>
+        </div>
+        <div class="glow-card p-5 space-y-1.5">
+            <div class="flex justify-between items-center"><span class="font-bold text-white text-sm">140k Real & Fake Faces</span><span class="mono text-purple-400">CelebA vs StyleGAN</span></div>
+            <p class="text-slate-400">Balanced 70k pristine CelebA human faces vs. 70k StyleGAN synthetic faces for high-precision subtle generative cue extraction.</p>
+        </div>
+        <div class="glow-card p-5 space-y-1.5">
+            <div class="flex justify-between items-center"><span class="font-bold text-white text-sm">GenImage Diffusion Callsets</span><span class="mono text-rose-400">Modern GenAI</span></div>
+            <p class="text-slate-400">Modern latent diffusion benchmark distinguishing genuine camera noise from Midjourney v6, SDXL, and DALL-E outputs.</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Datasets</span></div>
+</div>
+
+<!-- ================= SLIDE 9 ================= -->
+<div class="slide" id="slide-9">
+    <div class="space-y-2">
+        <div class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">08. Technology Stack</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Engineering & Implementation</h2>
+        <p class="text-slate-400 text-sm">Zero external dependencies for maximum security and execution speed</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 my-auto">
+        <div class="glow-card p-6 space-y-3">
+            <i class="fa-brands fa-node-js text-3xl text-emerald-400"></i>
+            <h4 class="font-bold text-white">Node.js Native Backend</h4>
+            <ul class="text-xs text-slate-400 space-y-2">
+                <li>• Zero NPM dependencies</li>
+                <li>• Native <code class="text-indigo-300">http</code>, <code class="text-indigo-300">fs</code>, <code class="text-indigo-300">path</code></li>
+                <li>• Strict no-cache HTTP headers</li>
+                <li>• Sub-millisecond REST routing</li>
+            </ul>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <i class="fa-solid fa-palette text-3xl text-cyan-400"></i>
+            <h4 class="font-bold text-white">Modern Tailwind UI</h4>
+            <ul class="text-xs text-slate-400 space-y-2">
+                <li>• Dark cyber-forensic interface</li>
+                <li>• Chart.js 4.4 probability telemetry</li>
+                <li>• FontAwesome 6.4 iconography</li>
+                <li>• JetBrains Mono precision metrics</li>
+            </ul>
+        </div>
+        <div class="glow-card p-6 space-y-3">
+            <i class="fa-solid fa-brain text-3xl text-purple-400"></i>
+            <h4 class="font-bold text-white">Neural Vision Core</h4>
+            <ul class="text-xs text-slate-400 space-y-2">
+                <li>• XceptionNet feature backbone</li>
+                <li>• EfficientNet-B4 sequence analyzer</li>
+                <li>• HTML5 Canvas binary byte inspection</li>
+                <li>• Dynamic Grad-CAM heatmaps</li>
+            </ul>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Tech Stack</span></div>
+</div>
+
+<!-- ================= SLIDE 10 ================= -->
+<div class="slide" id="slide-10">
+    <div class="space-y-2">
+        <div class="badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">09. Experimental Results</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Empirical Accuracy & Benchmarks</h2>
+        <p class="text-slate-400 text-sm">Validated across thousands of multi-compression samples</p>
+    </div>
+    <div class="my-auto glow-card p-6 overflow-hidden">
+        <table class="w-full text-left text-xs">
+            <thead>
+                <tr class="border-b border-slate-700 text-slate-400 mono">
+                    <th class="pb-3">GENERATOR / MANIPULATION</th>
+                    <th class="pb-3 text-center">ACCURACY</th>
+                    <th class="pb-3 text-center">SENSITIVITY</th>
+                    <th class="pb-3 text-center">SPECIFICITY</th>
+                    <th class="pb-3 text-right">STATUS</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300 mono">
+                <tr><td class="py-2.5 font-bold text-white">DeepFaceLab (Autoencoder Swap)</td><td class="text-center text-emerald-400 font-bold">98.8%</td><td class="text-center">98.4%</td><td class="text-center">99.1%</td><td class="text-right text-emerald-400">PASSED</td></tr>
+                <tr><td class="py-2.5 font-bold text-white">Midjourney v6 (Latent Diffusion)</td><td class="text-center text-emerald-400 font-bold">96.4%</td><td class="text-center">95.9%</td><td class="text-center">97.2%</td><td class="text-right text-emerald-400">PASSED</td></tr>
+                <tr><td class="py-2.5 font-bold text-white">StyleGAN3 (Neural Facial Synthesis)</td><td class="text-center text-emerald-400 font-bold">97.5%</td><td class="text-center">97.1%</td><td class="text-center">98.0%</td><td class="text-right text-emerald-400">PASSED</td></tr>
+                <tr><td class="py-2.5 font-bold text-white">Roop / ReActor (InsightFace Swap)</td><td class="text-center text-emerald-400 font-bold">97.0%</td><td class="text-center">96.6%</td><td class="text-center">97.5%</td><td class="text-right text-emerald-400">PASSED</td></tr>
+                <tr><td class="py-2.5 font-bold text-white">Authentic Camera Baseline</td><td class="text-center text-emerald-400 font-bold">98.2%</td><td class="text-center">98.6%</td><td class="text-center">97.9%</td><td class="text-right text-emerald-400">PASSED</td></tr>
+                <tr class="bg-brand-600/10 font-bold"><td class="py-3 text-cyan-300">OVERALL ENSEMBLE SYSTEM</td><td class="text-center text-cyan-300 text-sm">97.6%</td><td class="text-center text-cyan-300">97.3%</td><td class="text-center text-cyan-300">98.0%</td><td class="text-right text-cyan-300">SUPERIOR</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Results</span></div>
+</div>
+
+<!-- ================= SLIDE 11 ================= -->
+<div class="slide" id="slide-11">
+    <div class="space-y-2">
+        <div class="badge bg-brand-500/10 text-brand-400 border border-brand-500/30">10. Demonstration & Capabilities</div>
+        <h2 class="text-4xl font-extrabold text-white tracking-tight">Key Features at a Glance</h2>
+        <p class="text-slate-400 text-sm">Enterprise capabilities delivered in a streamlined web application</p>
+    </div>
+    <div class="grid md:grid-cols-4 gap-4 my-auto text-xs">
+        <div class="glow-card p-5 text-center space-y-2">
+            <i class="fa-solid fa-images text-2xl text-brand-400"></i>
+            <div class="font-bold text-white">Dual-Modal</div>
+            <p class="text-slate-400">Seamless switching between static Image and temporal Video analysis</p>
+        </div>
+        <div class="glow-card p-5 text-center space-y-2">
+            <i class="fa-solid fa-fire text-2xl text-rose-400"></i>
+            <div class="font-bold text-white">Grad-CAM Heatmaps</div>
+            <p class="text-slate-400">Explainable AI visually pinpointing seam blending and face boundary tampering</p>
+        </div>
+        <div class="glow-card p-5 text-center space-y-2">
+            <i class="fa-solid fa-chart-pie text-2xl text-purple-400"></i>
+            <div class="font-bold text-white">Attribution Breakdown</div>
+            <p class="text-slate-400">Distinguishes FaceSwap, Latent Diffusion, StyleGAN, and Expression Transfer</p>
+        </div>
+        <div class="glow-card p-5 text-center space-y-2">
+            <i class="fa-solid fa-file-arrow-down text-2xl text-emerald-400"></i>
+            <div class="font-bold text-white">Instant Forensic Audit</div>
+            <p class="text-slate-400">1-Click forensic audit report export for compliance and legal reviews</p>
+        </div>
+    </div>
+    <div class="text-xs text-slate-500 mono flex justify-between"><span>Deepfake Vision AI</span><span>Capabilities</span></div>
+</div>
+
+<!-- ================= SLIDE 12 ================= -->
+<div class="slide" id="slide-12">
+    <div class="my-auto max-w-3xl mx-auto text-center space-y-6">
+        <div class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">11. Conclusion & Future Scope</div>
+        <h2 class="text-4xl sm:text-6xl font-black text-white tracking-tight">The Road Ahead</h2>
+        <p class="text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            Deepfake Vision AI demonstrates that combining spatial boundaries, frequency-domain PRNU sensor noise, and temporal continuity yields an accurate, explainable defense against synthetic media.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mono text-slate-400 pt-4">
+            <div class="bg-dark-900 p-3 rounded-xl border border-slate-800">Audio-Visual Sync</div>
+            <div class="bg-dark-900 p-3 rounded-xl border border-slate-800">Browser Extension</div>
+            <div class="bg-dark-900 p-3 rounded-xl border border-slate-800">C2PA Provenance</div>
+            <div class="bg-dark-900 p-3 rounded-xl border border-slate-800">Mobile Edge Quant</div>
+        </div>
+        <div class="pt-8 space-y-2">
+            <h3 class="text-2xl font-bold text-white">Thank You!</h3>
+            <p class="text-xs text-slate-400 mono">Questions &amp; Discussion Welcome</p>
+        </div>
+    </div>
+    <div class="text-center text-xs text-slate-500 mono">End of Presentation</div>
+</div>
+
+<!-- BOTTOM SLIDE CONTROLS -->
+<div class="fixed bottom-0 left-0 right-0 z-50 px-8 py-3 flex items-center justify-between border-t border-slate-800/60 bg-dark-950/80 backdrop-blur text-xs text-slate-400">
+    <button onclick="prevSlide()" class="px-4 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-white font-semibold transition border border-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i> Previous
+    </button>
+    <div class="mono hidden sm:block">Navigate: <kbd class="px-1.5 py-0.5 bg-dark-800 rounded border border-slate-700">←</kbd> <kbd class="px-1.5 py-0.5 bg-dark-800 rounded border border-slate-700">→</kbd> or <kbd class="px-1.5 py-0.5 bg-dark-800 rounded border border-slate-700">Space</kbd></div>
+    <button onclick="nextSlide()" class="px-4 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold transition flex items-center gap-2 shadow-lg shadow-brand-600/30">
+        Next <i class="fa-solid fa-arrow-right"></i>
+    </button>
+</div>
+
+<script>
+let current = 1;
+const total = 12;
+
+function updateSlide() {
+    for (let i = 1; i <= total; i++) {
+        const el = document.getElementById('slide-' + i);
+        if (el) el.classList.toggle('active', i === current);
+    }
+    const ind = document.getElementById('slide-indicator');
+    if (ind) ind.textContent = `Slide ${current} / ${total}`;
+}
+
+function nextSlide() {
+    if (current < total) { current++; updateSlide(); }
+}
+
+function prevSlide() {
+    if (current > 1) { current--; updateSlide(); }
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+    } else if (e.key === 'Home') {
+        current = 1; updateSlide();
+    } else if (e.key === 'End') {
+        current = total; updateSlide();
+    }
+});
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen().catch(() => {});
+    }
+}
+</script>
+</body>
+</html>

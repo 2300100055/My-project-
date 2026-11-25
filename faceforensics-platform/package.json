@@ -1,0 +1,16 @@
+{
+  "name": "deepfake-vision-ai",
+  "version": "6.0.0",
+  "description": "Multi-Stage AI Deepfake Detection Platform — ONNX Runtime + MediaPipe + Pixel Forensics",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "onnxruntime-node": "^1.17.0"
+  },
+  "keywords": ["deepfake","detection","forensics","onnx","mediapipe","xceptionnet"],
+  "license": "MIT"
+}
