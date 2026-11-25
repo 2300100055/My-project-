@@ -1,0 +1,58 @@
+name: Verity CI
+
+on:
+  push:
+    branches: [main, master, feature/**]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: verity/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install poetry && poetry install --no-interaction
+      - name: Lint
+        run: poetry run ruff check . && poetry run mypy app/ --ignore-missing-imports
+      - name: Test
+        run: poetry run pytest tests/ -v --cov=app --cov-report=term-missing
+      - name: Security audit
+        run: pip-audit || true          # warn-only until baseline is locked
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: verity/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: verity/frontend/package.json
+      - run: npm ci
+      - name: Lint + typecheck
+        run: npm run lint
+      - name: Unit tests
+        run: npm test -- --passWithNoTests
+      - name: Security audit
+        run: npm audit --audit-level=high || true
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        working-directory: verity
+        run: docker compose build --no-cache
