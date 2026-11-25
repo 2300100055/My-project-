@@ -21,6 +21,7 @@ from app.workers.job_store import (
     complete_job,
     create_job,
     fail_job,
+    get_job,
     update_job_progress,
 )
 
@@ -53,6 +54,12 @@ async def _dispatch(job_id: str, media_path: str, media_type: str, filename: str
                 file_size_bytes=file_size,
                 progress_callback=_progress,
             )
+        for sig in result.signals:
+            if sig.heatmap_url and Path(sig.heatmap_url).is_file():
+                job = await get_job(job_id)
+                if job:
+                    job.heatmap_path = sig.heatmap_url
+                sig.heatmap_url = f"/api/v1/jobs/{job_id}/heatmap"
         await complete_job(job_id, result)
         log.info("upload.analysis_complete", job_id=job_id, verdict=result.verdict)
     except Exception as e:

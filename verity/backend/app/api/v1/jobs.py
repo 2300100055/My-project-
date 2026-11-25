@@ -1,10 +1,12 @@
 """Job status and result endpoints."""
 from __future__ import annotations
 
+from pathlib import Path
 from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Request
+from fastapi.responses import FileResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -46,6 +48,14 @@ async def get_job_result(job_id: UUID) -> AnalysisResult:
         from app.core.errors import VerityError
         raise VerityError(code="RESULT_NOT_READY", message="Analysis not yet complete.", status_code=202)
     return job.result
+
+
+@router.get("/jobs/{job_id}/heatmap")
+async def get_job_heatmap(job_id: UUID) -> FileResponse:
+    job = await get_job(str(job_id))
+    if not job or not job.heatmap_path or not Path(job.heatmap_path).is_file():
+        raise JobNotFoundError(str(job_id))
+    return FileResponse(job.heatmap_path, media_type="image/jpeg")
 
 
 @router.delete("/jobs/{job_id}", status_code=204)

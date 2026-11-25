@@ -33,11 +33,17 @@ export function UploadZone({ onUpload, onError }: Props) {
     mode === "image" ? m.startsWith("image/") : m.startsWith("video/")
   );
 
+  const acceptedExts = Object.entries(ACCEPTED_TYPES)
+    .filter(([m]) => (mode === "image" ? m.startsWith("image/") : m.startsWith("video/")))
+    .flatMap(([, exts]) => exts);
+
   const handleFile = useCallback(
     async (file: File) => {
       if (uploading) return;
-      if (!acceptedMimes.includes(file.type)) {
-        onError(`Unsupported file type (${file.type || "unknown"}). Supported: ${mode === "image" ? IMAGE_EXTS : VIDEO_EXTS}.`);
+      const ext = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : "";
+      const typeValid = file.type ? acceptedMimes.includes(file.type) : acceptedExts.includes(ext);
+      if (!typeValid && !acceptedExts.includes(ext)) {
+        onError(`Unsupported file type (${file.type || ext || "unknown"}). Supported: ${mode === "image" ? IMAGE_EXTS : VIDEO_EXTS}.`);
         return;
       }
       const maxMB = mode === "image" ? 20 : 500;
@@ -55,7 +61,7 @@ export function UploadZone({ onUpload, onError }: Props) {
         setUploading(false);
       }
     },
-    [mode, uploading, onUpload, onError, acceptedMimes]
+    [mode, uploading, onUpload, onError, acceptedMimes, acceptedExts]
   );
 
   const onDrop = useCallback(
