@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef } from "react";
 import { uploadFile } from "@/lib/api";
 
-const ACCEPTED_TYPES = {
+const ACCEPTED_TYPES: Record<string, string[]> = {
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
   "image/webp": [".webp"],
@@ -13,8 +13,8 @@ const ACCEPTED_TYPES = {
   "video/webm": [".webm"],
 };
 
-const IMAGE_EXTS = ".jpg, .jpeg, .png, .webp, .gif, .heic";
-const VIDEO_EXTS = ".mp4, .mov, .webm";
+const IMAGE_EXTS = "JPG, PNG, WEBP, GIF, HEIC";
+const VIDEO_EXTS = "MP4, MOV, WEBM";
 
 type Mode = "image" | "video";
 
@@ -37,12 +37,12 @@ export function UploadZone({ onUpload, onError }: Props) {
     async (file: File) => {
       if (uploading) return;
       if (!acceptedMimes.includes(file.type)) {
-        onError(`File type "${file.type}" is not supported. Use ${mode === "image" ? IMAGE_EXTS : VIDEO_EXTS}.`);
+        onError(`Unsupported file type (${file.type || "unknown"}). Supported: ${mode === "image" ? IMAGE_EXTS : VIDEO_EXTS}.`);
         return;
       }
       const maxMB = mode === "image" ? 20 : 500;
       if (file.size > maxMB * 1024 * 1024) {
-        onError(`File is too large. Maximum size is ${maxMB} MB.`);
+        onError(`File exceeds the ${maxMB} MB limit.`);
         return;
       }
       setUploading(true);
@@ -69,12 +69,12 @@ export function UploadZone({ onUpload, onError }: Props) {
   );
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      {/* Segmented control */}
+    <div className="flex flex-col items-center gap-6">
+      {/* Apple-style segmented control */}
       <div
         role="tablist"
         aria-label="Media type"
-        className="inline-flex bg-surface rounded-pill p-1 gap-1"
+        className="inline-flex bg-surface rounded-pill p-1 border border-black/[0.04]"
       >
         {(["image", "video"] as Mode[]).map((m) => (
           <button
@@ -82,7 +82,7 @@ export function UploadZone({ onUpload, onError }: Props) {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`px-5 py-2 rounded-pill text-[14px] font-medium transition-all duration-200 capitalize
+            className={`px-6 py-1.5 rounded-pill text-[14px] font-medium transition-all duration-200 capitalize
               ${mode === m ? "bg-white text-text-primary shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
           >
             {m}
@@ -94,36 +94,43 @@ export function UploadZone({ onUpload, onError }: Props) {
       <div
         role="button"
         tabIndex={0}
-        aria-label={`Upload ${mode}. Drag and drop or click to browse.`}
+        aria-label={`Upload ${mode}. Drag and drop or click to choose a file.`}
         onDrop={onDrop}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onClick={() => fileRef.current?.click()}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
-        className={`w-full max-w-xl min-h-[220px] border-2 border-dashed rounded-card-lg flex flex-col items-center justify-center gap-4 cursor-pointer
-          transition-all duration-200
-          ${dragOver ? "border-accent bg-accent/5 scale-[1.01]" : "border-black/15 bg-surface hover:border-accent/50 hover:bg-accent/3"}
+        className={`w-full max-w-xl min-h-[240px] rounded-card-lg border flex flex-col items-center justify-center gap-4 px-8 py-12 cursor-pointer
+          transition-all duration-200 ease-out
+          ${dragOver
+            ? "border-accent bg-accent/[0.04] scale-[1.01] shadow-card-hover"
+            : "border-black/[0.1] bg-white hover:border-accent/50 hover:shadow-card"}
           ${uploading ? "opacity-60 cursor-not-allowed" : ""}`}
       >
         {uploading ? (
           <>
-            <div className="w-10 h-10 border-2 border-accent/30 border-t-accent rounded-full animate-spin" aria-hidden="true" />
+            <div className="w-8 h-8 border-2 border-black/10 border-t-accent rounded-full animate-spin" aria-hidden="true" />
             <p className="text-text-secondary text-[15px]">Uploading…</p>
           </>
         ) : (
           <>
-            <svg className="text-text-secondary" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <path d="M20 8v16M13 15l7-7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <rect x="6" y="28" width="28" height="6" rx="3" fill="currentColor" opacity="0.12"/>
-            </svg>
+            <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-accent">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 16V4m0 0l-4.5 4.5M12 4l4.5 4.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 17v1a2 2 0 002 2h12a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
+            </div>
             <div className="text-center">
-              <p className="text-[16px] font-medium text-text-primary">
-                {dragOver ? "Drop to analyze" : "Drag & drop or click to browse"}
+              <p className="text-[17px] font-medium text-text-primary tracking-tight">
+                {dragOver ? "Release to analyze" : `Drop your ${mode} here`}
               </p>
-              <p className="text-[13px] text-text-secondary mt-1">
-                {mode === "image" ? `${IMAGE_EXTS} · Max 20 MB` : `${VIDEO_EXTS} · Max 500 MB · Max 10 min`}
+              <p className="text-[14px] text-text-secondary mt-1">
+                or <span className="text-accent font-medium">choose a file</span> from your device
               </p>
             </div>
+            <p className="text-[12px] text-text-secondary/80 mt-2">
+              {mode === "image" ? `${IMAGE_EXTS} · Up to 20 MB` : `${VIDEO_EXTS} · Up to 500 MB · 10 min max`}
+            </p>
           </>
         )}
       </div>
