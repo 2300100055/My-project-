@@ -20,10 +20,10 @@ export function Nav() {
           className="flex items-center gap-2.5 font-semibold text-[18px] tracking-tight text-text-primary flex-shrink-0"
         >
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="10" stroke="#0071E3" strokeWidth="1.75" />
-            <path d="M6.5 11.5L9.5 14.5L15.5 8.5" stroke="#0071E3" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="11" cy="11" r="9.5" stroke="#2563EB" strokeWidth="1.75" />
+            <circle cx="11" cy="11" r="4" fill="#0F172A" />
           </svg>
-          <span>Verity</span>
+          <span>OriginLens</span>
         </Link>
 
         <nav aria-label="Main navigation">

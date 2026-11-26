@@ -35,8 +35,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Verity API",
-    description="AI content authenticity analyzer — multi-signal forensic pipeline",
+    title="OriginLens API",
+    description="AI & Human media authenticity analyzer — multi-signal forensic pipeline",
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc",

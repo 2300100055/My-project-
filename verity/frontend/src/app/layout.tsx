@@ -4,13 +4,13 @@ import { Nav } from "@/components/layout/Nav";
 import { Providers } from "@/components/layout/Providers";
 
 export const metadata: Metadata = {
-  title: "Verity — AI Content Authenticity Analyzer",
+  title: "OriginLens — AI & Human Media Forensics",
   description:
-    "Upload an image or video to receive an honest, explainable, multi-signal assessment of whether it was AI-generated or manipulated. No login required.",
-  keywords: ["AI detection", "deepfake", "image forensics", "authenticity", "C2PA"],
+    "Upload an image or video to determine whether it is AI-generated or human-captured with explainable multi-signal forensics.",
+  keywords: ["AI detection", "human vs AI", "deepfake", "image forensics", "authenticity", "C2PA"],
   openGraph: {
-    title: "Verity — AI Content Authenticity Analyzer",
-    description: "Honest, explainable analysis. No login required.",
+    title: "OriginLens — AI & Human Media Forensics",
+    description: "Honest, explainable AI vs. Human media analysis. No login required.",
     type: "website",
   },
 };
@@ -22,9 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Nav />
           <main id="main-content">{children}</main>
-          <footer className="border-t border-black/8 mt-24 py-8 text-center text-sm text-text-secondary">
+          <footer className="border-t border-[#0F172A]/10 mt-24 py-8 text-center text-sm text-text-primary/65 bg-white">
             <p>
-              Verity is an informational tool. Results are never certain. &ldquo;Not detected&rdquo; never means &ldquo;authentic.&rdquo;
+              OriginLens is an informational tool. Results are never certain. &ldquo;Not detected&rdquo; never means &ldquo;authentic.&rdquo;
             </p>
             <p className="mt-1">
               <a href="/privacy" className="text-accent hover:underline">Privacy</a>

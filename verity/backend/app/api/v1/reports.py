@@ -60,7 +60,7 @@ def _generate_pdf(result) -> bytes:  # type: ignore[no-untyped-def]
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph("Verity — AI Content Analysis Report", styles["Title"]))
+    story.append(Paragraph("OriginLens — AI & Human Media Analysis Report", styles["Title"]))
     story.append(Spacer(1, 0.5*cm))
     story.append(Paragraph(f"File: {result.filename}", styles["Normal"]))
     story.append(Paragraph(f"Analyzed: {result.analyzed_at}", styles["Normal"]))

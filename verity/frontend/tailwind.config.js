@@ -4,13 +4,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Strict 3-color system: Pure White (#FFFFFF), Ink (#1D1D1F), Apple Blue (#0071E3)
+        // Strict 3-color system: Pure White (#FFFFFF), Deep Navy (#0F172A), Electric Blue (#2563EB)
         canvas: "#FFFFFF",
         surface: "#FFFFFF",
-        "text-primary": "#1D1D1F",
-        "text-secondary": "#1D1D1F",
-        accent: "#0071E3",
-        "accent-hover": "#0071E3",
+        "text-primary": "#0F172A",
+        "text-secondary": "#0F172A",
+        accent: "#2563EB",
+        "accent-hover": "#2563EB",
       },
       fontFamily: {
         sans: [
@@ -30,8 +30,8 @@ module.exports = {
         pill: "9999px",
       },
       boxShadow: {
-        card: "0 1px 3px rgba(29, 29, 31, 0.06), 0 8px 24px rgba(29, 29, 31, 0.04)",
-        "card-hover": "0 4px 14px rgba(0, 113, 227, 0.12), 0 12px 32px rgba(29, 29, 31, 0.06)",
+        card: "0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.05)",
+        "card-hover": "0 4px 16px rgba(37, 99, 235, 0.14), 0 12px 32px rgba(15, 23, 42, 0.06)",
       },
       animation: {
         "pulse-ring": "pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite",

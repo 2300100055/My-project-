@@ -9,10 +9,22 @@ interface Props {
   onReset: () => void;
 }
 
-const VERDICT_LABEL: Record<Verdict, string> = {
-  likely_authentic: "Normal / Likely Authentic",
-  inconclusive: "Inconclusive",
-  likely_ai_generated: "AI-Generated or Manipulated",
+const VERDICT_CONFIG: Record<Verdict, { oneWord: string; subtitle: string; badgeClass: string }> = {
+  likely_authentic: {
+    oneWord: "Human",
+    subtitle: "Human-Generated / Natural Capture",
+    badgeClass: "bg-[#0F172A] text-white",
+  },
+  inconclusive: {
+    oneWord: "Inconclusive",
+    subtitle: "Mixed Signals — Review Evidence Below",
+    badgeClass: "bg-white text-[#0F172A] border border-[#0F172A]/25",
+  },
+  likely_ai_generated: {
+    oneWord: "AI",
+    subtitle: "AI-Generated or Manipulated",
+    badgeClass: "bg-accent text-white",
+  },
 };
 
 const SIGNAL_LABELS: Record<string, string> = {
@@ -75,14 +87,19 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
         </div>
 
         <div className="flex-1 text-center sm:text-left">
-          <span className="inline-block text-[12px] font-semibold uppercase tracking-[0.06em] text-white bg-accent px-3.5 py-1 rounded-pill mb-3">
-            {VERDICT_LABEL[result.verdict]}
-          </span>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-3">
+            <span className={`inline-block text-[20px] sm:text-[22px] font-bold tracking-tight px-5 py-1.5 rounded-pill ${VERDICT_CONFIG[result.verdict].badgeClass}`}>
+              {VERDICT_CONFIG[result.verdict].oneWord}
+            </span>
+            <span className="text-[13px] font-semibold uppercase tracking-[0.06em] text-accent">
+              {VERDICT_CONFIG[result.verdict].subtitle}
+            </span>
+          </div>
           <p className="text-[15px] sm:text-[16px] text-text-primary leading-relaxed">
             {result.plain_english_summary}
           </p>
           <p className="text-[13px] text-text-primary/65 mt-3">
-            Reliability: <span className="font-medium text-text-primary capitalize">{result.reliability}</span>
+            Signal Reliability: <span className="font-medium text-text-primary capitalize">{result.reliability}</span>
             {result.reliability_note && ` · ${result.reliability_note}`}
           </p>
         </div>

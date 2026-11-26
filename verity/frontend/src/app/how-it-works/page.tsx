@@ -36,10 +36,10 @@ export default function HowItWorksPage() {
     <div className="bg-white min-h-[calc(100vh-56px)]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.025em] text-text-primary mb-4">
-          How Verity Works
+          How OriginLens Works
         </h1>
-        <p className="text-text-secondary text-[16px] sm:text-[18px] leading-relaxed mb-12">
-          Verity fuses six independent forensic signals to assess whether an image or video was AI-generated or manipulated.
+        <p className="text-text-primary/70 text-[16px] sm:text-[18px] leading-relaxed mb-12">
+          OriginLens fuses six independent forensic signals to determine whether an image or video is AI-generated or human-captured.
         </p>
 
         <div className="space-y-4">
@@ -57,7 +57,7 @@ export default function HowItWorksPage() {
         </div>
 
         <div className="mt-12 card-surface p-6 sm:p-8">
-          <h2 className="text-[17px] font-semibold text-text-primary mb-3">What Verity Cannot Do</h2>
+          <h2 className="text-[17px] font-semibold text-text-primary mb-3">What OriginLens Cannot Do</h2>
           <ul className="space-y-2 text-[14px] text-text-secondary list-disc list-inside leading-relaxed">
             <li>Detect proprietary watermarks (SynthID requires Google&apos;s private detection model)</li>
             <li>Guarantee a correct result — false positives and negatives exist</li>

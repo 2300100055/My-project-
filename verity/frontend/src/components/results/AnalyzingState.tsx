@@ -58,10 +58,10 @@ export function AnalyzingState({ jobId, onResult, onError }: Props) {
     <div className="card p-10 text-center animate-fade-up">
       <div className="relative mx-auto mb-8 w-24 h-24" aria-hidden="true">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" stroke="#1D1D1F" strokeOpacity="0.1" strokeWidth="6" fill="none" />
+          <circle cx="48" cy="48" r="40" stroke="#0F172A" strokeOpacity="0.1" strokeWidth="6" fill="none" />
           <circle
             cx="48" cy="48" r="40"
-            stroke="#0071E3" strokeWidth="6" fill="none"
+            stroke="#2563EB" strokeWidth="6" fill="none"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 40}`}
             strokeDashoffset={`${2 * Math.PI * 40 * (1 - progress)}`}
