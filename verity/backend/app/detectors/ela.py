@@ -1,19 +1,14 @@
 """
 Error Level Analysis (ELA) detector.
-Standard forensic technique: re-save at Q=95, subtract from original.
-AI-generated images often show uniform ELA (no JPEG grid pattern),
-while edited/manipulated images show localized high-error regions.
-
-Score:
-  High ELA uniformity (low variance) → likely AI-generated → score toward 0
-  Low ELA uniformity (high variance, natural JPEG grid) → likely authentic → score toward 1
+Measures spatial structure, edge-correlation, and block-level variance of JPEG re-compression deltas.
+Natural camera photos show rich edge-aligned compression variance; synthetic/uniform images show flat ELA.
 """
 from __future__ import annotations
 
 import io
-import tempfile
 from pathlib import Path
 
+import cv2
 import numpy as np
 import structlog
 from PIL import Image, UnidentifiedImageError
@@ -28,15 +23,14 @@ ELA_QUALITY = 95
 
 class ELADetector(BaseDetector):
     name = "ela"
-    weight = 0.10
+    weight = 0.25
 
     async def analyze(self, media_path: str, media_type: str, **kwargs) -> SignalResult:  # type: ignore[override]
         if media_type == "video":
-            # ELA on video: skip (handled by video pipeline on keyframes)
             return SignalResult(
                 signal=self.name,
                 score=0.5,
-                confidence=0.1,
+                confidence=0.0,
                 weight=self.weight,
                 summary="ELA applied to keyframes via video pipeline.",
                 details={"skipped_for_video_top_level": True},
@@ -45,8 +39,9 @@ class ELADetector(BaseDetector):
         try:
             with Image.open(media_path) as orig:
                 orig_rgb = orig.convert("RGB")
+                if max(orig_rgb.size) > 1024:
+                    orig_rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
 
-            # Re-save at ELA_QUALITY
             buf = io.BytesIO()
             orig_rgb.save(buf, format="JPEG", quality=ELA_QUALITY)
             buf.seek(0)
@@ -56,49 +51,61 @@ class ELADetector(BaseDetector):
             recomp_arr = np.array(recompressed, dtype=np.float32)
 
             ela_map = np.abs(orig_arr - recomp_arr)
-            ela_normalized = (ela_map / ela_map.max() * 255).clip(0, 255).astype(np.uint8) if ela_map.max() > 0 else ela_map.astype(np.uint8)
+            ela_gray = np.mean(ela_map, axis=2)
 
-            # Metrics
-            mean_ela = float(np.mean(ela_map))
-            std_ela = float(np.std(ela_map))
-            # For genuine photos: high std (varied across image)
-            # For AI images: low std (uniform noise floor)
-            # For manipulated: high localized peaks
+            mean_ela = float(np.mean(ela_gray))
+            std_ela = float(np.std(ela_gray))
+            p95 = float(np.percentile(ela_gray, 95))
+            p50 = float(np.percentile(ela_gray, 50))
+            dynamic_ratio = (p95 - p50) / (mean_ela + 1e-5)
 
-            # Normalize: std > 15 → authentic; std < 5 → uniform (AI)
-            normalized_std = min(std_ela / 20.0, 1.0)
-            score = normalized_std  # 0=uniform (AI-like), 1=varied (authentic-like)
+            # Edge alignment: in real photos, ELA errors correlate with image gradients
+            gray_img = np.mean(orig_arr, axis=2)
+            gx = cv2.Sobel(gray_img, cv2.CV_32F, 1, 0, ksize=3)
+            gy = cv2.Sobel(gray_img, cv2.CV_32F, 0, 1, ksize=3)
+            grad = np.sqrt(gx**2 + gy**2)
+            if np.std(grad) > 1e-4 and np.std(ela_gray) > 1e-4:
+                corr = float(np.corrcoef(grad.ravel(), ela_gray.ravel())[0, 1])
+                corr = max(0.0, min(1.0, corr))
+            else:
+                corr = 0.0
 
-            confidence = 0.65  # ELA is moderately reliable
+            # Combine ELA richness:
+            # - High edge correlation + healthy dynamic range -> natural photo (0.65-0.95)
+            # - Very flat ELA (mean < 0.8 or std < 0.8) -> synthetic/over-smoothed (0.15-0.40)
+            richness = min(std_ela / 5.0, 1.0)
+            edge_score = min(corr / 0.45, 1.0)
+            dyn_score = min(dynamic_ratio / 2.5, 1.0)
+            score = self._safe_score(0.40 * richness + 0.40 * edge_score + 0.20 * dyn_score)
 
             # Save heatmap
             heatmap_path = None
             try:
-                ela_pil = Image.fromarray(ela_normalized)
+                ela_max = ela_map.max()
+                ela_vis = (ela_map / ela_max * 255).clip(0, 255).astype(np.uint8) if ela_max > 0 else ela_map.astype(np.uint8)
+                ela_pil = Image.fromarray(ela_vis)
                 heatmap_name = f"ela_{Path(media_path).stem}.jpg"
-                heatmap_dir = Path(media_path).parent
-                heatmap_path = str(heatmap_dir / heatmap_name)
+                heatmap_path = str(Path(media_path).parent / heatmap_name)
                 ela_pil.save(heatmap_path, "JPEG", quality=85)
             except Exception as e:
                 log.warning("ela.heatmap_save_failed", error=str(e))
 
-            if score < 0.3:
-                summary = "ELA shows unusually uniform error levels — consistent with AI-generated images."
-            elif score > 0.65:
-                summary = "ELA shows natural JPEG compression patterns — consistent with authentic photography."
+            if score >= 0.55:
+                summary = f"ELA shows natural edge-aligned compression variance (edge corr {corr:.2f}, std {std_ela:.2f})."
             else:
-                summary = "ELA results are inconclusive."
+                summary = f"ELA shows unusually flat or uniform error distribution (edge corr {corr:.2f}, std {std_ela:.2f})."
 
             return SignalResult(
                 signal=self.name,
-                score=self._safe_score(score),
-                confidence=confidence,
+                score=score,
+                confidence=0.75,
                 weight=self.weight,
                 summary=summary,
                 details={
-                    "mean_ela": round(mean_ela, 2),
-                    "std_ela": round(std_ela, 2),
-                    "ela_quality": ELA_QUALITY,
+                    "mean_ela": round(mean_ela, 3),
+                    "std_ela": round(std_ela, 3),
+                    "edge_correlation": round(corr, 3),
+                    "dynamic_ratio": round(dynamic_ratio, 3),
                 },
                 heatmap_url=heatmap_path,
             )
