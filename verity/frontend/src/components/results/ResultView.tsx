@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
+import { deleteJob } from "@/lib/api";
 import type { AnalysisResult, SignalResult, Verdict } from "@/lib/types";
 
 interface Props {
   result: AnalysisResult;
+  previewUrl?: string | null;
   onReset: () => void;
 }
 
@@ -23,16 +25,32 @@ const SIGNAL_LABELS: Record<string, string> = {
   temporal_consistency: "Temporal Consistency",
 };
 
-export function ResultView({ result, onReset }: Props) {
+export function ResultView({ result, previewUrl, onReset }: Props) {
   const [expandedSignal, setExpandedSignal] = useState<string | null>(null);
+  const [sliderPos, setSliderPos] = useState(50);
+  const [deleting, setDeleting] = useState(false);
+
   const circumference = 2 * Math.PI * 40;
   const offset = circumference * (1 - result.score / 100);
+  const heatmapUrl = result.signals.find((s) => s.heatmap_url)?.heatmap_url;
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteJob(result.job_id);
+    } catch {
+      // Ignore if already expired
+    } finally {
+      setDeleting(false);
+      onReset();
+    }
+  };
 
   return (
     <div className="animate-fade-up space-y-6">
       {/* Verdict Summary Card */}
-      <div className="card p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-8">
-        <div className="relative flex-shrink-0 w-32 h-32" aria-label={`Score: ${result.score} out of 100`}>
+      <div className="card p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+        <div className="relative flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32" aria-label={`Score: ${result.score} out of 100`}>
           <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
             <circle cx="48" cy="48" r="40" stroke="#F5F5F7" strokeWidth="6" fill="none" />
             <circle
@@ -49,7 +67,7 @@ export function ResultView({ result, onReset }: Props) {
             />
           </svg>
           <span className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[28px] font-semibold tracking-tight text-text-primary">
+            <span className="text-[26px] sm:text-[28px] font-semibold tracking-tight text-text-primary">
               {result.score.toFixed(0)}
             </span>
             <span className="text-[11px] text-text-secondary">/ 100</span>
@@ -60,7 +78,7 @@ export function ResultView({ result, onReset }: Props) {
           <span className="inline-block text-[12px] font-semibold uppercase tracking-[0.06em] text-accent bg-surface px-3 py-1 rounded-pill mb-3">
             {VERDICT_LABEL[result.verdict]}
           </span>
-          <p className="text-[16px] text-text-primary leading-relaxed">
+          <p className="text-[15px] sm:text-[16px] text-text-primary leading-relaxed">
             {result.plain_english_summary}
           </p>
           <p className="text-[13px] text-text-secondary mt-3">
@@ -71,7 +89,7 @@ export function ResultView({ result, onReset }: Props) {
       </div>
 
       {/* Limitations Note */}
-      <div className="card-surface px-6 py-4 text-[13px] text-text-secondary leading-relaxed" role="note">
+      <div className="card-surface px-5 sm:px-6 py-4 text-[13px] text-text-secondary leading-relaxed" role="note">
         <span className="font-semibold text-text-primary">Limitations: </span>
         {result.limitation_notice}
       </div>
@@ -93,21 +111,65 @@ export function ResultView({ result, onReset }: Props) {
         </div>
       </div>
 
-      {/* Heatmap */}
-      {result.signals.find((s) => s.heatmap_url) && (
+      {/* Heatmap with Before / After Slider */}
+      {heatmapUrl && (
         <div>
-          <h2 className="text-[18px] font-semibold tracking-tight text-text-primary mb-3">
-            Pixel Analysis Heatmap
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[18px] font-semibold tracking-tight text-text-primary">
+              Pixel Analysis Heatmap
+            </h2>
+            {previewUrl && (
+              <span className="text-[12px] text-text-secondary">
+                Original · ELA ({sliderPos}%)
+              </span>
+            )}
+          </div>
           <div className="card overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={result.signals.find((s) => s.heatmap_url)!.heatmap_url!}
-              alt="ELA heatmap showing pixel-level anomaly map"
-              className="w-full object-contain max-h-80 bg-surface"
-            />
+            {previewUrl ? (
+              <div className="relative w-full h-64 sm:h-80 bg-surface select-none overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heatmapUrl}
+                  alt="ELA heatmap showing pixel-level compression variance"
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+                <div
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewUrl}
+                    alt="Original uploaded image"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none"
+                  style={{ left: `${sliderPos}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={sliderPos}
+                  onChange={(e) => setSliderPos(Number(e.target.value))}
+                  aria-label="Compare original image and ELA heatmap"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize"
+                />
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={heatmapUrl}
+                alt="ELA heatmap showing pixel-level anomaly map"
+                className="w-full object-contain max-h-80 bg-surface"
+              />
+            )}
             <p className="p-4 text-[13px] text-text-secondary">
-              Error Level Analysis heatmap: brighter areas indicate higher compression variance.
+              {previewUrl
+                ? "Drag horizontally to compare the original image with the Error Level Analysis map."
+                : "Error Level Analysis heatmap: brighter areas indicate higher compression variance."}
             </p>
           </div>
         </div>
@@ -119,14 +181,17 @@ export function ResultView({ result, onReset }: Props) {
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 pt-2">
+      <div className="flex flex-wrap items-center gap-3 pt-2">
         <a href={`/api/v1/jobs/${result.job_id}/report/pdf`} download className="btn-secondary">
           Download PDF Report
         </a>
         <a href={`/api/v1/jobs/${result.job_id}/report/json`} download className="btn-secondary">
           Download JSON
         </a>
-        <button onClick={onReset} className="btn-primary">
+        <button onClick={handleDelete} disabled={deleting} className="btn-secondary">
+          {deleting ? "Deleting…" : "Delete My Results"}
+        </button>
+        <button onClick={onReset} className="btn-primary sm:ml-auto">
           Analyze Another File
         </button>
       </div>
@@ -141,21 +206,21 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
   return (
     <div className="card">
       <button
-        className="w-full flex items-center gap-4 p-5 text-left hover:bg-surface/60 transition-colors rounded-card"
+        className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 text-left hover:bg-surface/60 transition-colors rounded-card"
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <div className="flex-shrink-0 w-12 text-center">
-          <span className="text-[16px] font-semibold text-text-primary">{scorePercent}</span>
+        <div className="flex-shrink-0 w-11 text-center">
+          <span className="text-[15px] sm:text-[16px] font-semibold text-text-primary">{scorePercent}</span>
           <span className="text-[11px] text-text-secondary block">/100</span>
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[15px] font-medium text-text-primary">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[14px] sm:text-[15px] font-medium text-text-primary">
               {SIGNAL_LABELS[sig.signal] ?? sig.signal}
             </span>
-            <span className="text-[12px] text-text-secondary ml-2 flex-shrink-0">
+            <span className="text-[12px] text-text-secondary flex-shrink-0">
               Confidence {confPercent}%
             </span>
           </div>
@@ -165,7 +230,7 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
               style={{ width: `${scorePercent}%` }}
             />
           </div>
-          <p className="text-[13px] text-text-secondary mt-2 truncate">{sig.summary}</p>
+          <p className="text-[13px] text-text-secondary mt-2 line-clamp-2 sm:truncate">{sig.summary}</p>
         </div>
 
         <svg
@@ -179,14 +244,14 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-black/[0.06] pt-4">
+        <div className="px-4 sm:px-5 pb-5 border-t border-black/[0.06] pt-4">
           <p className="text-[14px] text-text-primary mb-3">{sig.summary}</p>
           {Object.keys(sig.details).length > 0 && (
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-[13px]">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-[13px]">
               {Object.entries(sig.details).map(([k, v]) => (
-                <div key={k} className="contents">
+                <div key={k} className="flex justify-between sm:block gap-2">
                   <dt className="text-text-secondary capitalize">{k.replace(/_/g, " ")}</dt>
-                  <dd className="font-mono text-text-primary">{String(v)}</dd>
+                  <dd className="font-mono text-text-primary break-all">{String(v)}</dd>
                 </div>
               ))}
             </dl>

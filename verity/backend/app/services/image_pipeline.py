@@ -16,6 +16,7 @@ from app.detectors.c2pa_check import C2PADetector
 from app.detectors.ela import ELADetector
 from app.detectors.metadata import MetadataDetector
 from app.detectors.ml_classifier import MLClassifierDetector
+from app.detectors.noise import NoiseResidualDetector
 from app.detectors.spectral import SpectralDetector
 from app.schemas import AnalysisResult
 from app.services.fusion import fuse
@@ -27,6 +28,7 @@ _DETECTORS = [
     MetadataDetector(),
     ELADetector(),
     SpectralDetector(),
+    NoiseResidualDetector(),
     MLClassifierDetector(),
 ]
 

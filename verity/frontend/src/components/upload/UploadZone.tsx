@@ -19,12 +19,13 @@ const VIDEO_EXTS = "MP4, MOV, WEBM";
 type Mode = "image" | "video";
 
 interface Props {
-  onUpload: (jobId: string) => void;
+  initialMode?: Mode;
+  onUpload: (jobId: string, previewUrl?: string) => void;
   onError: (message: string) => void;
 }
 
-export function UploadZone({ onUpload, onError }: Props) {
-  const [mode, setMode] = useState<Mode>("image");
+export function UploadZone({ initialMode = "image", onUpload, onError }: Props) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -53,8 +54,9 @@ export function UploadZone({ onUpload, onError }: Props) {
       }
       setUploading(true);
       try {
+        const preview = mode === "image" ? URL.createObjectURL(file) : undefined;
         const { job_id } = await uploadFile(file);
-        onUpload(job_id);
+        onUpload(job_id, preview);
       } catch (e: unknown) {
         onError(e instanceof Error ? e.message : "Upload failed. Please try again.");
       } finally {
@@ -75,8 +77,7 @@ export function UploadZone({ onUpload, onError }: Props) {
   );
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Apple-style segmented control */}
+    <div className="flex flex-col items-center gap-6 w-full">
       <div
         role="tablist"
         aria-label="Media type"
@@ -96,7 +97,6 @@ export function UploadZone({ onUpload, onError }: Props) {
         ))}
       </div>
 
-      {/* Drop zone */}
       <div
         role="button"
         tabIndex={0}
@@ -106,7 +106,7 @@ export function UploadZone({ onUpload, onError }: Props) {
         onDragLeave={() => setDragOver(false)}
         onClick={() => fileRef.current?.click()}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
-        className={`w-full max-w-xl min-h-[240px] rounded-card-lg border flex flex-col items-center justify-center gap-4 px-8 py-12 cursor-pointer
+        className={`w-full max-w-xl min-h-[220px] sm:min-h-[240px] rounded-card-lg border flex flex-col items-center justify-center gap-4 px-6 sm:px-8 py-10 sm:py-12 cursor-pointer
           transition-all duration-200 ease-out
           ${dragOver
             ? "border-accent bg-accent/[0.04] scale-[1.01] shadow-card-hover"
@@ -127,7 +127,7 @@ export function UploadZone({ onUpload, onError }: Props) {
               </svg>
             </div>
             <div className="text-center">
-              <p className="text-[17px] font-medium text-text-primary tracking-tight">
+              <p className="text-[16px] sm:text-[17px] font-medium text-text-primary tracking-tight">
                 {dragOver ? "Release to analyze" : `Drop your ${mode} here`}
               </p>
               <p className="text-[14px] text-text-secondary mt-1">
