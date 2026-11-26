@@ -126,8 +126,8 @@ class MetadataDetector(BaseDetector):
                     )
                 return SignalResult(
                     signal=self.name,
-                    score=0.85 if has_device else 0.50,
-                    confidence=0.80 if has_device else 0.25,
+                    score=0.88 if has_device else 0.35,
+                    confidence=0.85 if has_device else 0.45,
                     weight=self.weight,
                     summary=(
                         f"Video device metadata present ({vmeta['device']})."
@@ -169,8 +169,8 @@ class MetadataDetector(BaseDetector):
             if not exif:
                 return SignalResult(
                     signal=self.name,
-                    score=0.45,
-                    confidence=0.25,  # low confidence: web/social photos also strip EXIF
+                    score=0.35,
+                    confidence=0.45,
                     weight=self.weight,
                     summary="No EXIF metadata present (common in both web-shared photos and AI images).",
                     details={

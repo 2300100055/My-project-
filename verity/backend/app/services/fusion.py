@@ -79,9 +79,22 @@ def fuse(
         raw_score = min(raw_score, 0.15)
 
     # Strong ML AI detection override: if pretrained ViT classifier is confident it's AI
-    ml_sig = next((s for s in signals if s.signal == "ml_classifier" and s.confidence >= 0.55 and s.score <= 0.25), None)
+    ml_sig = next((s for s in signals if s.signal == "ml_classifier" and s.confidence >= 0.55 and s.score <= 0.38), None)
     if ml_sig is not None:
-        raw_score = min(raw_score, 0.40)
+        raw_score = min(raw_score, 0.42)
+
+    # Multi-signal AI consensus: if >=3 active signals lean AI (<0.50) without camera/C2PA provenance or strong Human ML
+    has_provenance = any(
+        (s.signal == "metadata" and s.score >= 0.80) or (s.signal == "provenance" and s.score >= 0.80)
+        for s in active_signals
+    )
+    has_strong_human_ml = any(
+        s.signal == "ml_classifier" and s.confidence >= 0.55 and s.score >= 0.70
+        for s in active_signals
+    )
+    ai_leaning_count = sum(1 for s in active_signals if s.score < 0.50)
+    if not has_provenance and not has_strong_human_ml and ai_leaning_count >= 3:
+        raw_score = min(raw_score, 0.45)
 
     reliability_level, reliability_note, rel_factor = _reliability(
         image_width, image_height, jpeg_quality, video_duration_s

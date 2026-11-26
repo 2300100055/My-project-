@@ -164,10 +164,10 @@ def _analyze_adjacent_temporal(path: str, max_pairs: int = 24) -> SignalResult:
     noise_ok = min(mean_noise / 4.5, 1.0)
     flicker_ok = max(0.0, 1.0 - max(0.0, mean_lap_diff - 0.04) / 0.20)
     raw_t = 0.55 * noise_ok + 0.45 * flicker_ok
-    # Steady consecutive frames are neutral-positive (0.58, low conf), never 1.000
+    # Steady consecutive frames are neutral (0.52, low conf), never inflating score
     if raw_t >= 0.70:
-        score = 0.58
-        conf = 0.35
+        score = 0.52
+        conf = 0.30
     else:
         score = raw_t
         conf = 0.78
@@ -413,7 +413,7 @@ async def run_video_pipeline(
                     details={},
                 )
             scores_arr = np.array([s.score for s in frame_sigs])
-            mean_score = float(0.5 * np.percentile(scores_arr, 25) + 0.5 * np.mean(scores_arr))
+            mean_score = float(0.65 * np.percentile(scores_arr, 20) + 0.35 * np.mean(scores_arr))
             mean_conf = float(np.mean([s.confidence for s in frame_sigs]))
             return SignalResult(
                 signal=name,

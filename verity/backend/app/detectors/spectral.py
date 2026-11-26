@@ -61,10 +61,12 @@ def _analyze_spectrum(gray: np.ndarray) -> tuple[float, dict]:
 
     # Natural photos: slope in [-3.2, -1.6], low peak_prominence (< 0.35), moderate hf_drop (< 3.5)
     slope_ok = 1.0 - min(abs(slope - (-2.3)) / 1.5, 1.0)
-    spike_ok = max(0.0, 1.0 - max(0.0, peak_prominence - 0.15) / 0.55)
-    hf_ok = max(0.0, 1.0 - max(0.0, hf_drop - 2.2) / 2.5)
+    spike_ok = max(0.0, 1.0 - max(0.0, peak_prominence - 0.12) / 0.45)
+    hf_ok = max(0.0, 1.0 - max(0.0, hf_drop - 1.8) / 2.2)
 
-    score = max(0.0, min(1.0, 0.35 * slope_ok + 0.35 * spike_ok + 0.30 * hf_ok))
+    # Cap spectral score at 0.72 so H.264/JPEG block edges never over-inflate synthetic media
+    raw = 0.35 * slope_ok + 0.35 * spike_ok + 0.30 * hf_ok
+    score = max(0.0, min(0.72, raw * 0.85))
     return score, {
         "spectral_slope": round(float(slope), 3),
         "peak_prominence": round(peak_prominence, 3),
