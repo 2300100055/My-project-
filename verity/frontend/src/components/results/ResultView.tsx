@@ -35,6 +35,7 @@ const SIGNAL_LABELS: Record<string, string> = {
   noise_residual: "Noise Residual",
   ml_classifier: "ML Classifier",
   temporal_consistency: "Temporal Consistency",
+  face_region_consistency: "Face Region Consistency",
 };
 
 export function ResultView({ result, previewUrl, onReset }: Props) {

@@ -78,6 +78,11 @@ def fuse(
     if ai_meta is not None:
         raw_score = min(raw_score, 0.15)
 
+    # Strong ML AI detection override: if pretrained ViT classifier is confident it's AI
+    ml_sig = next((s for s in signals if s.signal == "ml_classifier" and s.confidence >= 0.55 and s.score <= 0.25), None)
+    if ml_sig is not None:
+        raw_score = min(raw_score, 0.40)
+
     reliability_level, reliability_note, rel_factor = _reliability(
         image_width, image_height, jpeg_quality, video_duration_s
     )
