@@ -31,7 +31,7 @@ class C2PADetector(BaseDetector):
                 return SignalResult(
                     signal=self.name,
                     score=0.5,
-                    confidence=0.9,
+                    confidence=0.0,
                     weight=self.weight,
                     summary="No Content Credentials (C2PA) provenance found. This is normal for most images.",
                     details={"c2pa_present": False},
@@ -83,9 +83,9 @@ class C2PADetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=0.5,
-                confidence=0.1,
+                confidence=0.0,
                 weight=self.weight,
-                summary="C2PA library not available; provenance check skipped.",
+                summary="C2PA library not installed; provenance check skipped.",
                 details={"c2pa_present": None, "error": "library_missing"},
             )
         except Exception as e:
@@ -93,8 +93,8 @@ class C2PADetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=0.5,
-                confidence=0.3,
+                confidence=0.0,
                 weight=self.weight,
-                summary="Provenance check encountered an error; result is neutral.",
+                summary="Provenance check encountered an error; skipped.",
                 details={"error": str(e)},
             )

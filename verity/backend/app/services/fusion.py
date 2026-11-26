@@ -1,14 +1,12 @@
 """
-Fusion service: combine per-signal results into a final score, verdict, and reliability.
-See /docs/DECISIONS.md for the full formula and weight rationale.
+Fusion service: confidence-weighted combination of forensic signals into a clear
+Human vs AI verdict, 0-100 score, and reliability indicator.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from uuid import UUID
 
-from app.core.config import settings
 from app.schemas import (
     AnalysisResult,
     ReliabilityLevel,
@@ -27,20 +25,17 @@ def _reliability(
     factor = 1.0
     notes = []
 
-    # Low resolution
-    if width and height and (width < 256 or height < 256):
-        factor *= 0.6
-        notes.append("low resolution (<256px)")
-
-    # Heavy JPEG compression
-    if jpeg_quality is not None and jpeg_quality < 50:
+    if width and height and (width < 128 or height < 128):
         factor *= 0.7
+        notes.append("very low resolution (<128px)")
+
+    if jpeg_quality is not None and jpeg_quality < 45:
+        factor *= 0.75
         notes.append(f"heavy JPEG compression (Q={jpeg_quality})")
 
-    # Very short video
-    if duration_s is not None and duration_s < 1.0:
-        factor *= 0.5
-        notes.append("very short duration (<1s)")
+    if duration_s is not None and duration_s < 0.5:
+        factor *= 0.65
+        notes.append("very short duration (<0.5s)")
 
     note = f"Reliability reduced due to: {', '.join(notes)}." if notes else None
 
@@ -68,32 +63,41 @@ def fuse(
     frames_analyzed: int | None = None,
     video_timeline: list | None = None,
 ) -> AnalysisResult:
-    """Fuse signal results into a final AnalysisResult."""
-    # Weighted sum (each signal has own weight; they should sum to ~1.0)
-    total_weight = sum(s.weight for s in signals)
-    if total_weight == 0:
-        total_weight = 1.0
+    """Fuse active (confidence > 0) signal results into a decisive AnalysisResult."""
+    # Only include signals that actually ran (confidence > 0), weighted by weight * confidence
+    active_signals = [s for s in signals if s.confidence > 0.0 and s.weight > 0.0]
+    if not active_signals:
+        raw_score = 0.5
+    else:
+        weighted_sum = sum(s.score * s.weight * s.confidence for s in active_signals)
+        total_eff_weight = sum(s.weight * s.confidence for s in active_signals)
+        raw_score = weighted_sum / total_eff_weight if total_eff_weight > 0 else 0.5
 
-    raw_score = sum(s.score * s.weight for s in signals) / total_weight
+    # Hard override: verified AI generator signature in metadata/C2PA tampering
+    ai_meta = next((s for s in signals if s.signal == "metadata" and s.details.get("ai_signature")), None)
+    if ai_meta is not None:
+        raw_score = min(raw_score, 0.15)
 
-    # Reliability
+    # Strong ML AI detection override: if pretrained ViT classifier is confident it's AI
+    ml_sig = next((s for s in signals if s.signal == "ml_classifier" and s.confidence >= 0.55 and s.score <= 0.25), None)
+    if ml_sig is not None:
+        raw_score = min(raw_score, 0.40)
+
     reliability_level, reliability_note, rel_factor = _reliability(
         image_width, image_height, jpeg_quality, video_duration_s
     )
 
-    # Pull toward center when low reliability
-    final_raw = raw_score * rel_factor + 0.5 * (1 - rel_factor)
+    final_raw = raw_score * rel_factor + 0.5 * (1.0 - rel_factor)
     final_score = round(final_raw * 100, 1)
 
-    # Verdict bands
-    if final_score >= 65:
-        verdict = Verdict.LIKELY_AUTHENTIC
-    elif final_score >= 35:
+    # Clear, decisive verdict: Human (>= 50), AI (< 50), Inconclusive only if reliability is LOW and score is near 50
+    if reliability_level == ReliabilityLevel.LOW and 45 <= final_score <= 55:
         verdict = Verdict.INCONCLUSIVE
+    elif final_score >= 50.0:
+        verdict = Verdict.LIKELY_AUTHENTIC
     else:
         verdict = Verdict.LIKELY_AI_GENERATED
 
-    # Plain English summary
     summary = _build_summary(verdict, signals, final_score)
 
     return AnalysisResult(
@@ -115,21 +119,23 @@ def fuse(
 
 
 def _build_summary(verdict: Verdict, signals: list[SignalResult], score: float) -> str:
-    dominant = min(signals, key=lambda s: s.score, default=None)
+    active = [s for s in signals if s.confidence > 0.0]
     if verdict == Verdict.LIKELY_AI_GENERATED:
-        trigger = f"Strongest indicator ({dominant.signal}): {dominant.summary}" if dominant else ""
+        dominant = min(active or signals, key=lambda s: s.score, default=None)
+        trigger = f"Primary indicator ({dominant.signal}): {dominant.summary}" if dominant else ""
         return (
-            f"Final Verdict: AI-Generated or Manipulated (authenticity score {score:.0f}/100). "
-            f"{trigger} Multiple forensic signals point to synthetic generation or editing, though no result claims certainty."
+            f"Classified as AI-Generated / Manipulated (authenticity score {score:.0f}/100). "
+            f"{trigger}"
         )
     elif verdict == Verdict.INCONCLUSIVE:
         return (
-            f"Final Verdict: Inconclusive (authenticity score {score:.0f}/100). "
-            "Signals are mixed — some indicators suggest natural capture while others are missing or ambiguous. "
-            "Review the device/capture artifacts and individual signals below."
+            f"Signals are closely balanced (authenticity score {score:.0f}/100). "
+            "Review the Capture & Origin Artifacts and individual forensic signals below."
         )
     else:
+        dominant = max(active or signals, key=lambda s: s.score, default=None)
+        trigger = f"Strongest natural signal ({dominant.signal}): {dominant.summary}" if dominant else ""
         return (
-            f"Final Verdict: Normal / Likely Authentic (authenticity score {score:.0f}/100). "
-            "Forensic signals align with natural camera capture. However, 'not detected' never guarantees authenticity."
+            f"Classified as Human / Normal Media (authenticity score {score:.0f}/100). "
+            f"{trigger}"
         )

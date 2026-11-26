@@ -1,11 +1,7 @@
 """
-Spectral / Frequency domain detector.
-Uses FFT to detect:
-  1. GAN/diffusion spectral fingerprints — periodic frequency artifacts
-  2. Double-JPEG compression artifacts (DCT coefficient histogram peaks at non-multiple of 8)
-  3. Noise residual analysis (high-pass filter reveals AI smoothness vs camera noise)
-
-Score: 0 = AI-like spectral signature, 1 = natural/authentic
+Spectral / 2D FFT frequency-domain detector.
+Measures the azimuthal radial power spectrum and 1/f^alpha falloff slope + high-frequency detail.
+Natural images follow a smooth 1/f^alpha decay; GAN/diffusion images show spectral spikes or steep roll-off.
 """
 from __future__ import annotations
 
@@ -19,68 +15,73 @@ from app.schemas import SignalResult
 log = structlog.get_logger()
 
 
-def _fft_spectral_score(gray: np.ndarray) -> tuple[float, dict]:
-    """Check for periodic spectral artifacts common in GAN-generated images."""
-    f = np.fft.fft2(gray.astype(np.float32))
+def _analyze_spectrum(gray: np.ndarray) -> tuple[float, dict]:
+    h, w = gray.shape
+    # Center-crop to square up to 512x512 for consistent radial binning
+    side = min(h, w, 512)
+    y0, x0 = (h - side) // 2, (w - side) // 2
+    patch = gray[y0 : y0 + side, x0 : x0 + side].astype(np.float32)
+
+    # Apply Hann window to eliminate boundary wrap-around artifacts
+    win_y = np.hanning(side)[:, None]
+    win_x = np.hanning(side)[None, :]
+    patch = (patch - np.mean(patch)) * (win_y * win_x)
+
+    f = np.fft.fft2(patch)
     fshift = np.fft.fftshift(f)
-    magnitude = np.log1p(np.abs(fshift))
+    power = np.abs(fshift) ** 2
 
-    # Normalize
-    mag_norm = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min() + 1e-8)
+    cy, cx = side // 2, side // 2
+    y_idx, x_idx = np.indices((side, side))
+    r = np.sqrt((x_idx - cx) ** 2 + (y_idx - cy) ** 2).astype(int)
 
-    # Center of spectrum (DC component)
-    h, w = mag_norm.shape
-    center = mag_norm[h//2 - 10:h//2 + 10, w//2 - 10:w//2 + 10]
+    max_r = side // 2
+    radial_sum = np.bincount(r.ravel(), weights=power.ravel())
+    radial_cnt = np.bincount(r.ravel())
+    radial_mean = radial_sum[:max_r] / (radial_cnt[:max_r] + 1e-8)
 
-    # Compute radial average
-    y_idx, x_idx = np.indices((h, w))
-    r = np.sqrt((x_idx - w//2)**2 + (y_idx - h//2)**2).astype(int)
+    if len(radial_mean) < 20:
+        return 0.5, {"slope": 0.0, "peak_ratio": 0.0}
 
-    radial_mean = np.bincount(r.ravel(), weights=mag_norm.ravel()) / (np.bincount(r.ravel()) + 1e-8)
-    radial_mean = radial_mean[:min(len(radial_mean), 200)]
+    freqs = np.arange(2, len(radial_mean))
+    vals = np.log10(radial_mean[2:] + 1e-6)
+    log_f = np.log10(freqs)
 
-    # GAN images tend to have elevated mid-frequency energy and periodic peaks
-    if len(radial_mean) > 50:
-        mid_freq_energy = float(np.mean(radial_mean[20:80]))
-        low_freq_energy = float(np.mean(radial_mean[1:20]))
-        ratio = mid_freq_energy / (low_freq_energy + 1e-8)
-        # Natural images: ratio ~0.3-0.6; GAN: ratio often >0.7
-        spectral_score = 1.0 - min(ratio / 1.0, 1.0)
-    else:
-        spectral_score = 0.5
+    # Linear fit in log-log space: natural images have slope ~ -2.0 to -3.0
+    slope, intercept = np.polyfit(log_f, vals, 1)
+    fit_line = slope * log_f + intercept
+    residuals = vals - fit_line
 
-    return spectral_score, {
-        "mid_freq_energy": round(float(np.mean(radial_mean[20:80])) if len(radial_mean) > 80 else 0.0, 4),
-        "spectrum_shape": "radial",
+    # Periodic spikes above the 1/f fit (common in GAN/diffusion upsamplers)
+    peak_prominence = float(np.percentile(np.abs(residuals), 95))
+    # High-freq retention vs mid-freq
+    high_energy = float(np.mean(vals[len(vals) // 2 :]))
+    mid_energy = float(np.mean(vals[: len(vals) // 3]))
+    hf_drop = mid_energy - high_energy
+
+    # Natural photos: slope in [-3.2, -1.6], low peak_prominence (< 0.35), moderate hf_drop (< 3.5)
+    slope_ok = 1.0 - min(abs(slope - (-2.3)) / 1.5, 1.0)
+    spike_ok = max(0.0, 1.0 - max(0.0, peak_prominence - 0.15) / 0.55)
+    hf_ok = max(0.0, 1.0 - max(0.0, hf_drop - 2.2) / 2.5)
+
+    score = max(0.0, min(1.0, 0.35 * slope_ok + 0.35 * spike_ok + 0.30 * hf_ok))
+    return score, {
+        "spectral_slope": round(float(slope), 3),
+        "peak_prominence": round(peak_prominence, 3),
+        "hf_dropoff": round(hf_drop, 3),
     }
-
-
-def _noise_residual_score(gray: np.ndarray) -> tuple[float, dict]:
-    """High-pass filter: AI images tend to be smoother (less high-freq noise)."""
-    from scipy.ndimage import gaussian_filter  # type: ignore[import]
-
-    blurred = gaussian_filter(gray.astype(np.float32), sigma=2)
-    residual = gray.astype(np.float32) - blurred
-    noise_std = float(np.std(residual))
-
-    # Natural camera images: std ≈ 5-25 (sensor noise)
-    # AI-generated: std ≈ 1-8 (smoothed)
-    # Score: normalized to 0-1; higher = more authentic
-    score = min(noise_std / 20.0, 1.0)
-
-    return score, {"noise_std": round(noise_std, 3)}
 
 
 class SpectralDetector(BaseDetector):
     name = "spectral"
-    weight = 0.10
+    weight = 0.25
 
     async def analyze(self, media_path: str, media_type: str, **kwargs) -> SignalResult:  # type: ignore[override]
         if media_type == "video":
             return SignalResult(
                 signal=self.name,
                 score=0.5,
-                confidence=0.1,
+                confidence=0.0,
                 weight=self.weight,
                 summary="Spectral analysis applied to keyframes via video pipeline.",
                 details={"skipped_for_video_top_level": True},
@@ -90,27 +91,21 @@ class SpectralDetector(BaseDetector):
             with Image.open(media_path) as img:
                 gray = np.array(img.convert("L"))
 
-            fft_score, fft_details = _fft_spectral_score(gray)
-            noise_score, noise_details = _noise_residual_score(gray)
+            score, details = _analyze_spectrum(gray)
+            score = self._safe_score(score)
 
-            # Combine: FFT 60% + noise 40%
-            combined = fft_score * 0.6 + noise_score * 0.4
-            confidence = 0.60
-
-            if combined < 0.35:
-                summary = "Spectral analysis shows smooth frequency profile and low noise residual — consistent with AI generation."
-            elif combined > 0.65:
-                summary = "Spectral analysis shows natural frequency profile and camera noise — consistent with authentic photography."
+            if score >= 0.55:
+                summary = f"2D FFT spectrum follows natural 1/f decay (slope {details['spectral_slope']})."
             else:
-                summary = "Spectral analysis is inconclusive."
+                summary = f"2D FFT spectrum shows synthetic roll-off or periodic peaks (slope {details['spectral_slope']}, spikes {details['peak_prominence']})."
 
             return SignalResult(
                 signal=self.name,
-                score=self._safe_score(combined),
-                confidence=confidence,
+                score=score,
+                confidence=0.75,
                 weight=self.weight,
                 summary=summary,
-                details={**fft_details, **noise_details, "fft_score": round(fft_score, 3), "noise_score": round(noise_score, 3)},
+                details=details,
             )
 
         except Exception as e:

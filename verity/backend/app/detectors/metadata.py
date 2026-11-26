@@ -1,7 +1,7 @@
 """
 Metadata & capture-origin forensics detector.
-Extracts device (Make/Model/Lens), capture timestamp, camera settings (how it was taken),
-software/AI signatures, and video container/stream origin artifacts.
+Checks EXIF, PNG text chunks (Stable Diffusion / ComfyUI / Midjourney prompts),
+camera hardware tags, capture settings, and video container tags.
 """
 from __future__ import annotations
 
@@ -41,22 +41,24 @@ AI_SOFTWARE_PATTERNS = [
     r"kling",
     r"comfyui",
     r"automatic1111",
+    r"steps:\s*\d+,\s*sampler:",
+    r"negative prompt:",
 ]
 
 _AI_RE = re.compile("|".join(AI_SOFTWARE_PATTERNS), re.IGNORECASE)
 
 
-def _extract_exif(path: str) -> tuple[dict[str, Any], tuple[int, int] | None, str | None]:
+def _extract_image_meta(path: str) -> tuple[dict[str, Any], dict[str, Any], tuple[int, int] | None, str | None]:
     try:
         with Image.open(path) as img:
             size = img.size
             fmt = img.format
+            info = {str(k): str(v)[:500] for k, v in (img.info or {}).items() if isinstance(v, (str, bytes))}
             exif_data = img._getexif()  # type: ignore[attr-defined]
-            if not exif_data:
-                return {}, size, fmt
-            return {TAGS.get(k, k): v for k, v in exif_data.items()}, size, fmt
+            exif = {TAGS.get(k, k): v for k, v in exif_data.items()} if exif_data else {}
+            return exif, info, size, fmt
     except Exception:
-        return {}, None, None
+        return {}, {}, None, None
 
 
 def _fmt_ratio(val: Any) -> str | None:
@@ -68,7 +70,6 @@ def _fmt_ratio(val: Any) -> str | None:
 
 
 def _extract_video_metadata(path: str) -> dict[str, Any]:
-    details: dict[str, Any] = {}
     if shutil.which("ffprobe"):
         try:
             import ffmpeg  # type: ignore[import]
@@ -79,14 +80,13 @@ def _extract_video_metadata(path: str) -> dict[str, Any]:
             make = tags.get("com.apple.quicktime.make") or tags.get("make")
             model = tags.get("com.apple.quicktime.model") or tags.get("model")
             device = " ".join(x for x in [make, model] if x).strip() or None
-            details = {
+            return {
                 "device": device or "Not recorded",
                 "taken_at": tags.get("creation_time") or tags.get("com.apple.quicktime.creationdate") or "Not recorded",
                 "software": tags.get("encoder") or tags.get("com.apple.quicktime.software") or "Not recorded",
                 "capture_settings": f"{vstream.get('width', '?')}×{vstream.get('height', '?')} · {vstream.get('codec_name', 'unknown').upper()}",
                 "format": fmt.get("format_name", "video"),
             }
-            return details
         except Exception:
             pass
 
@@ -95,7 +95,7 @@ def _extract_video_metadata(path: str) -> dict[str, Any]:
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
         fps = cap.get(cv2.CAP_PROP_FPS) or 0
-        details = {
+        return {
             "device": "Not recorded",
             "taken_at": "Not recorded",
             "software": "Not recorded",
@@ -103,12 +103,11 @@ def _extract_video_metadata(path: str) -> dict[str, Any]:
         }
     finally:
         cap.release()
-    return details
 
 
 class MetadataDetector(BaseDetector):
     name = "metadata"
-    weight = 0.15
+    weight = 0.25
 
     async def analyze(self, media_path: str, media_type: str, **kwargs) -> SignalResult:  # type: ignore[override]
         try:
@@ -119,7 +118,7 @@ class MetadataDetector(BaseDetector):
                 if _AI_RE.search(soft):
                     return SignalResult(
                         signal=self.name,
-                        score=0.0,
+                        score=0.05,
                         confidence=0.95,
                         weight=self.weight,
                         summary=f"AI tool signature found in video metadata: {soft}.",
@@ -127,8 +126,8 @@ class MetadataDetector(BaseDetector):
                     )
                 return SignalResult(
                     signal=self.name,
-                    score=0.8 if has_device else 0.45,
-                    confidence=0.7 if has_device else 0.5,
+                    score=0.85 if has_device else 0.50,
+                    confidence=0.80 if has_device else 0.25,
                     weight=self.weight,
                     summary=(
                         f"Video device metadata present ({vmeta['device']})."
@@ -138,16 +137,42 @@ class MetadataDetector(BaseDetector):
                     details={**vmeta, "stripped": not has_device, "ai_signature": False},
                 )
 
-            exif, size, fmt = _extract_exif(media_path)
+            exif, png_info, size, fmt = _extract_image_meta(media_path)
             dims = f"{size[0]}×{size[1]}" if size else "Unknown"
+
+            # Check PNG text chunks / EXIF combined for AI signatures
+            soft = str(exif.get("Software", "")).strip()
+            creator = str(exif.get("Artist", "") or exif.get("Creator", "")).strip()
+            comment = str(exif.get("UserComment", "") or exif.get("ImageDescription", "")).strip()
+            png_text = " ".join(f"{k}:{v}" for k, v in png_info.items())
+            combined = f"{soft} {creator} {comment} {png_text}"
+
+            if _AI_RE.search(combined):
+                matched = _AI_RE.findall(combined)
+                return SignalResult(
+                    signal=self.name,
+                    score=0.02,
+                    confidence=0.98,
+                    weight=self.weight,
+                    summary=f"AI generator signature detected in file metadata: {matched[0]}.",
+                    details={
+                        "stripped": False,
+                        "ai_signature": True,
+                        "device": "Synthetic / AI Generator",
+                        "taken_at": "Not recorded",
+                        "capture_settings": f"{dims} · {fmt or 'Image'}",
+                        "software": soft or matched[0],
+                        "matched": matched,
+                    },
+                )
 
             if not exif:
                 return SignalResult(
                     signal=self.name,
-                    score=0.4,
-                    confidence=0.6,
+                    score=0.45,
+                    confidence=0.25,  # low confidence: web/social photos also strip EXIF
                     weight=self.weight,
-                    summary="No EXIF metadata found. Metadata is often stripped from AI-generated images or web-shared photos.",
+                    summary="No EXIF metadata present (common in both web-shared photos and AI images).",
                     details={
                         "stripped": True,
                         "ai_signature": False,
@@ -157,11 +182,6 @@ class MetadataDetector(BaseDetector):
                         "software": "Not recorded",
                     },
                 )
-
-            soft = str(exif.get("Software", "")).strip()
-            creator = str(exif.get("Artist", "") or exif.get("Creator", "")).strip()
-            comment = str(exif.get("UserComment", "") or exif.get("ImageDescription", "")).strip()
-            combined = f"{soft} {creator} {comment}"
 
             make = str(exif.get("Make", "")).strip()
             model = str(exif.get("Model", "")).strip()
@@ -193,26 +213,8 @@ class MetadataDetector(BaseDetector):
                 settings_parts.append(f"ISO {exif.get('ISOSpeedRatings')}")
             capture_settings = " · ".join(settings_parts)
 
-            if _AI_RE.search(combined):
-                matched = _AI_RE.findall(combined)
-                return SignalResult(
-                    signal=self.name,
-                    score=0.0,
-                    confidence=0.98,
-                    weight=self.weight,
-                    summary=f"AI tool signature found in metadata: {matched[0]}.",
-                    details={
-                        "stripped": False,
-                        "ai_signature": True,
-                        "device": device,
-                        "taken_at": taken_at,
-                        "capture_settings": capture_settings,
-                        "software": soft or matched[0],
-                        "matched": matched,
-                    },
-                )
-
             has_camera = bool(make or model)
+            has_exposure = any(k in exif for k in ("ExposureTime", "FNumber", "ISOSpeedRatings", "FocalLength"))
             has_gps = "GPSInfo" in exif
             details: dict[str, Any] = {
                 "fields_found": len(exif),
@@ -226,22 +228,31 @@ class MetadataDetector(BaseDetector):
                 "software": soft or "Not recorded",
             }
 
+            if has_camera and has_exposure:
+                return SignalResult(
+                    signal=self.name,
+                    score=0.94,
+                    confidence=0.90,
+                    weight=self.weight,
+                    summary=f"Full camera hardware and exposure metadata present ({device}).",
+                    details=details,
+                )
             if has_camera:
                 return SignalResult(
                     signal=self.name,
                     score=0.85,
-                    confidence=0.75,
+                    confidence=0.78,
                     weight=self.weight,
-                    summary=f"Camera metadata present ({device}). Consistent with a real camera capture.",
+                    summary=f"Camera metadata present ({device}).",
                     details=details,
                 )
 
             return SignalResult(
                 signal=self.name,
-                score=0.5,
-                confidence=0.5,
+                score=0.55,
+                confidence=0.35,
                 weight=self.weight,
-                summary="Metadata present without camera make/model or AI signatures.",
+                summary="Basic metadata present without camera hardware tags.",
                 details=details,
             )
 
@@ -250,8 +261,8 @@ class MetadataDetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=0.5,
-                confidence=0.2,
+                confidence=0.0,
                 weight=self.weight,
-                summary="Metadata analysis failed.",
+                summary="Metadata analysis skipped.",
                 details={"error": str(e)},
             )

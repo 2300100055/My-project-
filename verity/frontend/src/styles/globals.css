@@ -11,20 +11,21 @@
     box-sizing: border-box;
   }
 
-  html {
+  html,
+  body {
     background-color: #ffffff;
+    color: #0f172a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-canvas text-text-primary font-sans selection:bg-accent/15 selection:text-text-primary;
-    background-color: #ffffff;
+    @apply bg-white text-text-primary font-sans selection:bg-accent/15 selection:text-text-primary;
   }
 
   :focus-visible {
-    outline: 2px solid #0071E3;
+    outline: 2px solid #2563EB;
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -39,37 +40,37 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-card shadow-card border border-black/[0.07];
+    @apply bg-white rounded-card shadow-card border border-[#0F172A]/10;
   }
 
   .card-surface {
-    @apply bg-surface rounded-card border border-black/[0.04];
+    @apply bg-white rounded-card border border-[#0F172A]/15;
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-2.5
            bg-accent text-white font-medium text-[15px] tracking-[-0.01em] rounded-pill
            transition-all duration-200 ease-out
-           hover:bg-accent-hover active:scale-[0.98]
+           hover:opacity-90 active:scale-[0.98]
            focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
            disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
-           bg-white text-accent font-medium text-[14px] tracking-[-0.01em] rounded-pill
-           border border-black/[0.1]
+           bg-white text-[#0F172A] font-medium text-[14px] tracking-[-0.01em] rounded-pill
+           border border-[#0F172A]/20
            transition-all duration-200 ease-out
-           hover:border-accent/40 hover:bg-accent/[0.03] active:scale-[0.98]
+           hover:border-accent hover:text-accent active:scale-[0.98]
            focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
   }
 
   .nav-frosted {
-    @apply backdrop-blur-xl bg-white/85 border-b border-black/[0.06];
+    @apply backdrop-blur-xl bg-white/95 border-b border-[#0F172A]/10;
   }
 
   .confidence-bar {
-    @apply h-1.5 rounded-full bg-black/[0.06] overflow-hidden;
+    @apply h-1.5 rounded-full bg-[#0F172A]/10 overflow-hidden;
   }
 
   .confidence-bar-fill {
