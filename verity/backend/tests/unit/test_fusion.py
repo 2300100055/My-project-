@@ -48,13 +48,13 @@ class TestFuse:
         assert result.verdict == Verdict.LIKELY_AUTHENTIC
         assert result.score >= 65
 
-    def test_mixed_signals_inconclusive(self):
+    def test_mixed_signals_low_res_inconclusive(self):
         signals = [_sig("provenance", 0.5, 0.30), _sig("ml", 0.5, 0.35),
                    _sig("ela", 0.5, 0.10), _sig("spectral", 0.5, 0.10),
                    _sig("metadata", 0.5, 0.15)]
-        result = fuse(uuid.uuid4(), "image", "test.jpg", 100000, signals)
+        result = fuse(uuid.uuid4(), "image", "test.jpg", 100000, signals, image_width=64, image_height=64, jpeg_quality=30, video_duration_s=0.2)
         assert result.verdict == Verdict.INCONCLUSIVE
-        assert 35 <= result.score < 65
+        assert 45 <= result.score <= 55
 
     def test_result_has_limitation_notice(self):
         signals = [_sig("ml", 0.5, 1.0)]

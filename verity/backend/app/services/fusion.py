@@ -85,15 +85,13 @@ def fuse(
     final_raw = raw_score * rel_factor + 0.5 * (1.0 - rel_factor)
     final_score = round(final_raw * 100, 1)
 
-    # Clear, decisive verdict: Human (>= 52), AI (< 48), Inconclusive only in narrow tie band (48-51.9) or low reliability
-    if reliability_level == ReliabilityLevel.LOW and 40 <= final_score <= 60:
+    # Clear, decisive verdict: Human (>= 50), AI (< 50), Inconclusive only if reliability is LOW and score is near 50
+    if reliability_level == ReliabilityLevel.LOW and 45 <= final_score <= 55:
         verdict = Verdict.INCONCLUSIVE
-    elif final_score >= 52.0:
+    elif final_score >= 50.0:
         verdict = Verdict.LIKELY_AUTHENTIC
-    elif final_score < 48.0:
-        verdict = Verdict.LIKELY_AI_GENERATED
     else:
-        verdict = Verdict.INCONCLUSIVE
+        verdict = Verdict.LIKELY_AI_GENERATED
 
     summary = _build_summary(verdict, signals, final_score)
 
