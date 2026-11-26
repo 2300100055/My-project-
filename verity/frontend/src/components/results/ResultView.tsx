@@ -52,7 +52,7 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
       <div className="card p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
         <div className="relative flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32" aria-label={`Score: ${result.score} out of 100`}>
           <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-            <circle cx="48" cy="48" r="40" stroke="#F5F5F7" strokeWidth="6" fill="none" />
+            <circle cx="48" cy="48" r="40" stroke="#1D1D1F" strokeOpacity="0.1" strokeWidth="6" fill="none" />
             <circle
               cx="48"
               cy="48"
@@ -70,18 +70,18 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
             <span className="text-[26px] sm:text-[28px] font-semibold tracking-tight text-text-primary">
               {result.score.toFixed(0)}
             </span>
-            <span className="text-[11px] text-text-secondary">/ 100</span>
+            <span className="text-[11px] text-text-primary/60">/ 100</span>
           </span>
         </div>
 
         <div className="flex-1 text-center sm:text-left">
-          <span className="inline-block text-[12px] font-semibold uppercase tracking-[0.06em] text-accent bg-surface px-3 py-1 rounded-pill mb-3">
+          <span className="inline-block text-[12px] font-semibold uppercase tracking-[0.06em] text-white bg-accent px-3.5 py-1 rounded-pill mb-3">
             {VERDICT_LABEL[result.verdict]}
           </span>
           <p className="text-[15px] sm:text-[16px] text-text-primary leading-relaxed">
             {result.plain_english_summary}
           </p>
-          <p className="text-[13px] text-text-secondary mt-3">
+          <p className="text-[13px] text-text-primary/65 mt-3">
             Reliability: <span className="font-medium text-text-primary capitalize">{result.reliability}</span>
             {result.reliability_note && ` · ${result.reliability_note}`}
           </p>
@@ -89,7 +89,7 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
       </div>
 
       {/* Limitations Note */}
-      <div className="card-surface px-5 sm:px-6 py-4 text-[13px] text-text-secondary leading-relaxed" role="note">
+      <div className="card-surface px-5 sm:px-6 py-4 text-[13px] text-text-primary/70 leading-relaxed" role="note">
         <span className="font-semibold text-text-primary">Limitations: </span>
         {result.limitation_notice}
       </div>
@@ -122,14 +122,14 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
               Pixel Analysis Heatmap
             </h2>
             {previewUrl && (
-              <span className="text-[12px] text-text-secondary">
+              <span className="text-[12px] text-text-primary/65">
                 Original · ELA ({sliderPos}%)
               </span>
             )}
           </div>
           <div className="card overflow-hidden">
             {previewUrl ? (
-              <div className="relative w-full h-64 sm:h-80 bg-surface select-none overflow-hidden">
+              <div className="relative w-full h-64 sm:h-80 bg-white select-none overflow-hidden border-b border-[#1D1D1F]/10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={heatmapUrl}
@@ -137,7 +137,7 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
                   className="absolute inset-0 w-full h-full object-contain"
                 />
                 <div
-                  className="absolute inset-0 overflow-hidden"
+                  className="absolute inset-0 overflow-hidden bg-white"
                   style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -166,10 +166,10 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
               <img
                 src={heatmapUrl}
                 alt="ELA heatmap showing pixel-level anomaly map"
-                className="w-full object-contain max-h-80 bg-surface"
+                className="w-full object-contain max-h-80 bg-white border-b border-[#1D1D1F]/10"
               />
             )}
-            <p className="p-4 text-[13px] text-text-secondary">
+            <p className="p-4 text-[13px] text-text-primary/70">
               {previewUrl
                 ? "Drag horizontally to compare the original image with the Error Level Analysis map."
                 : "Error Level Analysis heatmap: brighter areas indicate higher compression variance."}
@@ -229,8 +229,8 @@ function CaptureArtifactsCard({ signals }: { signals: SignalResult[] }) {
       <div className="card p-5 sm:p-6">
         <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rows.map(({ label, value }) => (
-            <div key={label} className="bg-surface rounded-input p-3.5">
-              <dt className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+            <div key={label} className="bg-white border border-[#1D1D1F]/10 rounded-input p-3.5">
+              <dt className="text-[11px] font-semibold uppercase tracking-wider text-accent mb-1">
                 {label}
               </dt>
               <dd className="text-[14px] font-medium text-text-primary break-words">
@@ -251,13 +251,13 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
   return (
     <div className="card">
       <button
-        className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 text-left hover:bg-surface/60 transition-colors rounded-card"
+        className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 text-left hover:border-accent/40 transition-colors rounded-card"
         onClick={onToggle}
         aria-expanded={expanded}
       >
         <div className="flex-shrink-0 w-11 text-center">
           <span className="text-[15px] sm:text-[16px] font-semibold text-text-primary">{scorePercent}</span>
-          <span className="text-[11px] text-text-secondary block">/100</span>
+          <span className="text-[11px] text-text-primary/60 block">/100</span>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -265,7 +265,7 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
             <span className="text-[14px] sm:text-[15px] font-medium text-text-primary">
               {SIGNAL_LABELS[sig.signal] ?? sig.signal}
             </span>
-            <span className="text-[12px] text-text-secondary flex-shrink-0">
+            <span className="text-[12px] text-text-primary/65 flex-shrink-0">
               Confidence {confPercent}%
             </span>
           </div>
@@ -275,11 +275,11 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
               style={{ width: `${scorePercent}%` }}
             />
           </div>
-          <p className="text-[13px] text-text-secondary mt-2 line-clamp-2 sm:truncate">{sig.summary}</p>
+          <p className="text-[13px] text-text-primary/70 mt-2 line-clamp-2 sm:truncate">{sig.summary}</p>
         </div>
 
         <svg
-          className={`flex-shrink-0 w-5 h-5 text-text-secondary transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+          className={`flex-shrink-0 w-5 h-5 text-text-primary/60 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
           fill="currentColor"
           aria-hidden="true"
@@ -289,13 +289,13 @@ function SignalCard({ sig, expanded, onToggle }: { sig: SignalResult; expanded: 
       </button>
 
       {expanded && (
-        <div className="px-4 sm:px-5 pb-5 border-t border-black/[0.06] pt-4">
+        <div className="px-4 sm:px-5 pb-5 border-t border-[#1D1D1F]/10 pt-4">
           <p className="text-[14px] text-text-primary mb-3">{sig.summary}</p>
           {Object.keys(sig.details).length > 0 && (
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-[13px]">
               {Object.entries(sig.details).map(([k, v]) => (
                 <div key={k} className="flex justify-between sm:block gap-2">
-                  <dt className="text-text-secondary capitalize">{k.replace(/_/g, " ")}</dt>
+                  <dt className="text-text-primary/60 capitalize">{k.replace(/_/g, " ")}</dt>
                   <dd className="font-mono text-text-primary break-all">{String(v)}</dd>
                 </div>
               ))}
@@ -314,7 +314,7 @@ function VideoTimeline({ timeline, duration }: { timeline: NonNullable<AnalysisR
         Video Segment Timeline
       </h2>
       <div className="card p-5">
-        <div className="relative h-7 rounded-full overflow-hidden bg-surface">
+        <div className="relative h-7 rounded-full overflow-hidden bg-white border border-[#1D1D1F]/15">
           {timeline.map((seg, i) => {
             const left = duration > 0 ? (seg.start_s / duration) * 100 : 0;
             const width = duration > 0 ? ((seg.end_s - seg.start_s) / duration) * 100 : 0;
@@ -329,7 +329,7 @@ function VideoTimeline({ timeline, duration }: { timeline: NonNullable<AnalysisR
             );
           })}
         </div>
-        <div className="flex justify-between text-[12px] text-text-secondary mt-2">
+        <div className="flex justify-between text-[12px] text-text-primary/65 mt-2">
           <span>0:00</span>
           <span>{Math.floor(duration / 60)}:{String(Math.round(duration % 60)).padStart(2, "0")}</span>
         </div>

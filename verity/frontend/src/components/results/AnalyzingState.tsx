@@ -58,7 +58,7 @@ export function AnalyzingState({ jobId, onResult, onError }: Props) {
     <div className="card p-10 text-center animate-fade-up">
       <div className="relative mx-auto mb-8 w-24 h-24" aria-hidden="true">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" stroke="#F5F5F7" strokeWidth="6" fill="none" />
+          <circle cx="48" cy="48" r="40" stroke="#1D1D1F" strokeOpacity="0.1" strokeWidth="6" fill="none" />
           <circle
             cx="48" cy="48" r="40"
             stroke="#0071E3" strokeWidth="6" fill="none"
@@ -84,7 +84,7 @@ export function AnalyzingState({ jobId, onResult, onError }: Props) {
             <li key={s} className={`flex items-center gap-3 text-[14px] transition-all duration-300
               ${done ? "text-text-secondary line-through" : active ? "text-text-primary font-medium" : "text-black/25"}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[11px]
-                ${done ? "bg-text-primary text-white" : active ? "bg-accent text-white animate-pulse-ring" : "bg-surface text-transparent"}`}>
+                ${done ? "bg-text-primary text-white" : active ? "bg-accent text-white animate-pulse-ring" : "bg-white border border-[#1D1D1F]/20 text-transparent"}`}>
                 {done ? "✓" : i + 1}
               </span>
               {s}

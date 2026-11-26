@@ -4,13 +4,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Strict 3-color Apple palette: White (#FFFFFF), Ink (#1D1D1F / #6E6E73), Apple Blue (#0071E3)
+        // Strict 3-color system: Pure White (#FFFFFF), Ink (#1D1D1F), Apple Blue (#0071E3)
         canvas: "#FFFFFF",
-        surface: "#F5F5F7",
+        surface: "#FFFFFF",
         "text-primary": "#1D1D1F",
-        "text-secondary": "#6E6E73",
+        "text-secondary": "#1D1D1F",
         accent: "#0071E3",
-        "accent-hover": "#0077ED",
+        "accent-hover": "#0071E3",
       },
       fontFamily: {
         sans: [
@@ -24,15 +24,14 @@ module.exports = {
         ],
       },
       borderRadius: {
-        card: "22px",
-        "card-lg": "28px",
+        card: "20px",
+        "card-lg": "26px",
         input: "12px",
         pill: "9999px",
       },
       boxShadow: {
-        card: "0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04)",
-        "card-hover": "0 4px 12px rgba(0, 0, 0, 0.06), 0 16px 36px rgba(0, 0, 0, 0.06)",
-        nav: "0 1px 0 rgba(0, 0, 0, 0.06)",
+        card: "0 1px 3px rgba(29, 29, 31, 0.06), 0 8px 24px rgba(29, 29, 31, 0.04)",
+        "card-hover": "0 4px 14px rgba(0, 113, 227, 0.12), 0 12px 32px rgba(29, 29, 31, 0.06)",
       },
       animation: {
         "pulse-ring": "pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite",
