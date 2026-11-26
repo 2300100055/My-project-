@@ -1,7 +1,8 @@
 """
-Error Level Analysis (ELA) detector.
-Measures spatial structure, edge-correlation, and block-level variance of JPEG re-compression deltas.
-Natural camera photos show rich edge-aligned compression variance; synthetic/uniform images show flat ELA.
+Error Level Analysis (ELA) & Regional Tampering Detector.
+Re-saves at Q=90 and measures both:
+  1. Global edge-correlated compression richness (catches flat synthetic AI images)
+  2. 16x16 block anomaly ratio (catches localized deepfake face-swaps / spliced regions)
 """
 from __future__ import annotations
 
@@ -18,12 +19,12 @@ from app.schemas import SignalResult
 
 log = structlog.get_logger()
 
-ELA_QUALITY = 95
+ELA_QUALITY = 90
 
 
 class ELADetector(BaseDetector):
     name = "ela"
-    weight = 0.25
+    weight = 0.20
 
     async def analyze(self, media_path: str, media_type: str, **kwargs) -> SignalResult:  # type: ignore[override]
         if media_type == "video":
@@ -43,7 +44,7 @@ class ELADetector(BaseDetector):
                     orig_rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
 
             buf = io.BytesIO()
-            orig_rgb.save(buf, format="JPEG", quality=90)
+            orig_rgb.save(buf, format="JPEG", quality=ELA_QUALITY)
             buf.seek(0)
             recompressed = Image.open(buf).convert("RGB")
 
@@ -55,11 +56,8 @@ class ELADetector(BaseDetector):
 
             mean_ela = float(np.mean(ela_gray))
             std_ela = float(np.std(ela_gray))
-            p95 = float(np.percentile(ela_gray, 95))
-            p50 = float(np.percentile(ela_gray, 50))
-            dynamic_ratio = (p95 - p50) / (mean_ela + 1e-5)
 
-            # Edge alignment: in real photos, ELA errors correlate with image gradients
+            # Edge alignment
             gray_img = np.mean(orig_arr, axis=2)
             gx = cv2.Sobel(gray_img, cv2.CV_32F, 1, 0, ksize=3)
             gy = cv2.Sobel(gray_img, cv2.CV_32F, 0, 1, ksize=3)
@@ -70,12 +68,21 @@ class ELADetector(BaseDetector):
             else:
                 corr = 0.0
 
-            # Combine ELA richness:
-            # - Natural photos at Q=90 show edge-correlated variance (std ~ 2-8)
-            richness = min(std_ela / 3.2, 1.0)
+            # Regional splice / face-swap check: 16x16 block p98 vs median
+            h, w = ela_gray.shape
+            bh, bw = max(h // 16, 1), max(w // 16, 1)
+            blocks = ela_gray[: bh * 16, : bw * 16].reshape(bh, 16, bw, 16)
+            block_means = np.mean(blocks, axis=(1, 3))
+            b_med = float(np.percentile(block_means, 50))
+            b_p98 = float(np.percentile(block_means, 98))
+            splice_ratio = b_p98 / (b_med + 0.5)
+
+            richness = min(std_ela / 3.0, 1.0)
             edge_score = min(corr / 0.35, 1.0)
-            dyn_score = min(dynamic_ratio / 2.0, 1.0)
-            score = self._safe_score(0.40 * richness + 0.40 * edge_score + 0.20 * dyn_score)
+            # High splice_ratio (> 5.0) indicates localized region with mismatched compression
+            uniformity_ok = max(0.0, 1.0 - max(0.0, splice_ratio - 3.5) / 5.0)
+
+            score = self._safe_score(0.40 * richness + 0.40 * edge_score + 0.20 * uniformity_ok)
 
             # Save heatmap
             heatmap_path = None
@@ -90,21 +97,21 @@ class ELADetector(BaseDetector):
                 log.warning("ela.heatmap_save_failed", error=str(e))
 
             if score >= 0.55:
-                summary = f"ELA shows natural edge-aligned compression variance (edge corr {corr:.2f}, std {std_ela:.2f})."
+                summary = f"ELA shows consistent edge-aligned compression (edge corr {corr:.2f}, std {std_ela:.2f})."
             else:
-                summary = f"ELA shows unusually flat or uniform error distribution (edge corr {corr:.2f}, std {std_ela:.2f})."
+                summary = f"ELA shows flat synthetic error levels or regional splice anomaly (corr {corr:.2f}, splice {splice_ratio:.2f})."
 
             return SignalResult(
                 signal=self.name,
                 score=score,
-                confidence=0.50,
+                confidence=0.55,
                 weight=self.weight,
                 summary=summary,
                 details={
                     "mean_ela": round(mean_ela, 3),
                     "std_ela": round(std_ela, 3),
                     "edge_correlation": round(corr, 3),
-                    "dynamic_ratio": round(dynamic_ratio, 3),
+                    "splice_ratio": round(splice_ratio, 3),
                 },
                 heatmap_url=heatmap_path,
             )

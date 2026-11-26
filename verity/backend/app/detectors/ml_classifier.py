@@ -91,32 +91,41 @@ class MLClassifierDetector(BaseDetector):
         try:
             loop = asyncio.get_event_loop()
             with Image.open(media_path) as img:
-                img_rgb = img.convert("RGB").resize((224, 224))
+                rgb_full = img.convert("RGB")
+                w, h = rgb_full.size
+                img_resized = rgb_full.resize((224, 224), Image.Resampling.LANCZOS)
+                crops = [img_resized]
+                if min(w, h) >= 384:
+                    side = min(w, h) // 2
+                    left = (w - side) // 2
+                    top = (h - side) // 2
+                    crops.append(rgb_full.crop((left, top, left + side, top + side)).resize((224, 224), Image.Resampling.LANCZOS))
 
-            results = await loop.run_in_executor(None, lambda: pipe(img_rgb))
-            # results: [{"label": "artificial", "score": 0.95}, {"label": "human", "score": 0.05}]
+            def _infer_crops() -> tuple[float, float, list]:
+                ai_probs = []
+                last_res: list = []
+                for c in crops:
+                    res = pipe(c)
+                    last_res = res
+                    lm = {r["label"].lower(): r["score"] for r in res}
+                    ph = lm.get("human", lm.get("real", 0.5))
+                    pa = lm.get("artificial", lm.get("ai", 1.0 - ph))
+                    ai_probs.append(float(pa))
+                # Combine full view and center detail crop (catches both full-AI and regional edits)
+                p_ai_comb = ai_probs[0] if len(ai_probs) == 1 else (0.55 * ai_probs[0] + 0.45 * max(ai_probs))
+                return p_ai_comb, 1.0 - p_ai_comb, last_res
 
-            label_map: dict[str, float] = {r["label"].lower(): r["score"] for r in results}
-            # Map to: p(authentic) = p(human)
-            p_human = label_map.get("human", label_map.get("real", 0.5))
-            p_ai = label_map.get("artificial", label_map.get("ai", 1 - p_human))
+            p_ai, p_human, results = await loop.run_in_executor(None, _infer_crops)
 
-            # Apply temperature scaling
-            # Convert to logit space
-            eps = 1e-7
-            p_ai_clamped = max(eps, min(1 - eps, p_ai))
-            logit = np.log(p_ai_clamped / (1 - p_ai_clamped))
-            p_ai_calibrated = _temperature_scale(float(logit), settings.ML_TEMPERATURE)
-            score = 1.0 - p_ai_calibrated  # invert: higher = more authentic
-
+            score = 1.0 - float(p_ai)
             confidence = max(0.55, min(abs(score - 0.5) * 2.0, 0.95))
 
-            if score < 0.35:
-                summary = f"ML classifier: {p_ai_calibrated:.0%} probability of AI generation (high confidence)."
-            elif score > 0.65:
-                summary = f"ML classifier: {(1-p_ai_calibrated):.0%} probability of authentic content."
+            if score < 0.40:
+                summary = f"ML classifier: {p_ai:.0%} probability of AI generation."
+            elif score > 0.60:
+                summary = f"ML classifier: {(1-p_ai):.0%} probability of human/natural origin."
             else:
-                summary = "ML classifier result is inconclusive."
+                summary = "ML classifier result is borderline."
 
             return SignalResult(
                 signal=self.name,
@@ -127,8 +136,7 @@ class MLClassifierDetector(BaseDetector):
                 details={
                     "model": settings.ML_MODEL_ID,
                     "p_ai_raw": round(p_ai, 4),
-                    "p_ai_calibrated": round(p_ai_calibrated, 4),
-                    "temperature": settings.ML_TEMPERATURE,
+                    "p_human_raw": round(p_human, 4),
                     "raw_labels": results,
                 },
             )

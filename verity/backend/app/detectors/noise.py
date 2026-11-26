@@ -1,7 +1,8 @@
 """
-Multi-scale high-pass sensor noise residual detector.
-Distinguishes natural camera shot noise (spatially varying, channel-independent micro-grain)
-from synthetic AI smoothness or uniform generator noise.
+SRM High-Pass Residual & YCbCr Chroma-Luma Noise Detector.
+Uses 2nd-order Steganalysis Rich Model (SRM) high-pass kernels on Luminance (Y)
+and Chrominance (Cb, Cr) to separate real Bayer camera sensor noise from
+AI-generated latent/diffusion smoothness or synthetic seams.
 """
 from __future__ import annotations
 
@@ -14,6 +15,16 @@ from app.detectors.base import BaseDetector
 from app.schemas import SignalResult
 
 log = structlog.get_logger()
+
+# Classic SRM 2nd-order diagonal high-pass kernel
+_SRM_KERNEL = np.array(
+    [
+        [-1.0, 2.0, -1.0],
+        [2.0, -4.0, 2.0],
+        [-1.0, 2.0, -1.0],
+    ],
+    dtype=np.float32,
+) / 4.0
 
 
 class NoiseResidualDetector(BaseDetector):
@@ -36,51 +47,60 @@ class NoiseResidualDetector(BaseDetector):
                 rgb = img.convert("RGB")
                 if max(rgb.size) > 1024:
                     rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
-                arr = np.array(rgb, dtype=np.float32)
+                arr = np.array(rgb, dtype=np.uint8)
 
-            # High-pass residual via median filter (preserves edges less than Gaussian, isolates sensor noise)
-            denoised = cv2.medianBlur(arr.astype(np.uint8), 3).astype(np.float32)
-            residual = arr - denoised
+            ycrcb = cv2.cvtColor(arr, cv2.COLOR_RGB2YCrCb).astype(np.float32)
+            y_ch, cr_ch, cb_ch = ycrcb[:, :, 0], ycrcb[:, :, 1], ycrcb[:, :, 2]
 
-            # 1. Local patch noise floor (16x16 blocks): avoids being skewed by edges
-            h, w, _ = residual.shape
+            res_y = cv2.filter2D(y_ch, cv2.CV_32F, _SRM_KERNEL)
+            res_cb = cv2.filter2D(cb_ch, cv2.CV_32F, _SRM_KERNEL)
+            res_cr = cv2.filter2D(cr_ch, cv2.CV_32F, _SRM_KERNEL)
+
+            # 1. Block-level SRM energy (16x16 blocks)
+            h, w = res_y.shape
             bh, bw = max(h // 16, 1), max(w // 16, 1)
-            crop = residual[: bh * 16, : bw * 16, :]
-            blocks = crop.reshape(bh, 16, bw, 16, 3)
-            block_stds = np.std(blocks, axis=(1, 3, 4))
-            noise_floor = float(np.percentile(block_stds, 50))
-            noise_p75 = float(np.percentile(block_stds, 75))
-            noise_spread = noise_p75 - float(np.percentile(block_stds, 25))
+            crop = res_y[: bh * 16, : bw * 16]
+            blocks = crop.reshape(bh, 16, bw, 16)
+            block_stds = np.std(blocks, axis=(1, 3))
 
-            # 2. Channel independence: real camera Bayer/demosaic noise has lower R-B residual correlation
-            r_res = residual[:, :, 0].ravel()
-            b_res = residual[:, :, 2].ravel()
-            if np.std(r_res) > 1e-4 and np.std(b_res) > 1e-4:
-                rb_corr = float(np.corrcoef(r_res, b_res)[0, 1])
+            y_p50 = float(np.percentile(block_stds, 50))
+            y_p85 = float(np.percentile(block_stds, 85))
+            y_p15 = float(np.percentile(block_stds, 15))
+            spatial_spread = y_p85 - y_p15
+
+            # 2. Chroma-to-luma SRM residual ratio
+            y_std = float(np.std(res_y))
+            chroma_std = 0.5 * (float(np.std(res_cb)) + float(np.std(res_cr)))
+            chroma_ratio = chroma_std / (y_std + 1e-5)
+
+            # Natural camera photos: y_p50 ~ 1.0-6.0, spatial_spread ~ 1.0-5.0, chroma_ratio ~ 0.22-0.65
+            # AI/synthetic images: very smooth midtones (y_p50 < 0.7) OR unnatural chroma_ratio (< 0.16 or > 0.80)
+            luma_ok = min(y_p50 / 1.8, 1.0)
+            spread_ok = min(spatial_spread / 2.0, 1.0)
+            if 0.20 <= chroma_ratio <= 0.68:
+                chroma_ok = 1.0
+            elif chroma_ratio < 0.20:
+                chroma_ok = max(0.0, chroma_ratio / 0.20)
             else:
-                rb_corr = 1.0
+                chroma_ok = max(0.0, 1.0 - (chroma_ratio - 0.68) / 0.35)
 
-            floor_score = min(noise_floor / 2.5, 1.0)
-            spread_score = min(noise_spread / 2.8, 1.0)
-            channel_score = max(0.0, min(1.0, (0.95 - rb_corr) / 0.45))
-
-            score = self._safe_score(0.45 * floor_score + 0.35 * spread_score + 0.20 * channel_score)
+            score = self._safe_score(0.45 * luma_ok + 0.30 * spread_ok + 0.25 * chroma_ok)
 
             if score >= 0.55:
-                summary = f"Natural camera sensor noise profile detected (floor {noise_floor:.2f}, spread {noise_spread:.2f})."
+                summary = f"SRM sensor residual matches natural camera noise (Y={y_p50:.2f}, chroma ratio={chroma_ratio:.2f})."
             else:
-                summary = f"Unusually smooth or correlated noise residual (floor {noise_floor:.2f}, R/B corr {rb_corr:.2f})."
+                summary = f"SRM residual shows synthetic smoothness or abnormal chroma noise (Y={y_p50:.2f}, chroma ratio={chroma_ratio:.2f})."
 
             return SignalResult(
                 signal=self.name,
                 score=score,
-                confidence=0.55,
+                confidence=0.65,
                 weight=self.weight,
                 summary=summary,
                 details={
-                    "noise_floor": round(noise_floor, 3),
-                    "noise_spread": round(noise_spread, 3),
-                    "rb_correlation": round(rb_corr, 3),
+                    "srm_y_median": round(y_p50, 3),
+                    "srm_spread": round(spatial_spread, 3),
+                    "chroma_luma_ratio": round(chroma_ratio, 3),
                 },
             )
         except Exception as e:
