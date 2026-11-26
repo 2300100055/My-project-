@@ -145,7 +145,7 @@ export function UploadZone({ initialMode = "image", onUpload, onError }: Props) 
         ref={fileRef}
         type="file"
         accept={acceptedMimes.join(",")}
-        className="sr-only"
+        className="hidden"
         aria-hidden="true"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
       />
