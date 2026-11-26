@@ -117,20 +117,19 @@ def fuse(
 def _build_summary(verdict: Verdict, signals: list[SignalResult], score: float) -> str:
     dominant = min(signals, key=lambda s: s.score, default=None)
     if verdict == Verdict.LIKELY_AI_GENERATED:
-        trigger = f"The strongest indicator was {dominant.signal}: {dominant.summary}" if dominant else ""
+        trigger = f"Strongest indicator ({dominant.signal}): {dominant.summary}" if dominant else ""
         return (
-            f"This content shows strong signs of AI generation or manipulation (confidence score: {score:.0f}/100). "
-            f"{trigger} Multiple forensic signals point in this direction, though no result is ever certain."
+            f"Final Verdict: AI-Generated or Manipulated (authenticity score {score:.0f}/100). "
+            f"{trigger} Multiple forensic signals point to synthetic generation or editing, though no result claims certainty."
         )
     elif verdict == Verdict.INCONCLUSIVE:
         return (
-            f"The analysis is inconclusive (score: {score:.0f}/100). "
-            "Some signals suggest AI generation while others do not. "
-            "Consider the individual signal details below before drawing conclusions."
+            f"Final Verdict: Inconclusive (authenticity score {score:.0f}/100). "
+            "Signals are mixed — some indicators suggest natural capture while others are missing or ambiguous. "
+            "Review the device/capture artifacts and individual signals below."
         )
     else:
         return (
-            f"No strong indicators of AI generation were found (confidence score: {score:.0f}/100). "
-            "However, 'not detected' never means 'authentic'. "
-            "AI-generated content without forensic artifacts may still score highly here."
+            f"Final Verdict: Normal / Likely Authentic (authenticity score {score:.0f}/100). "
+            "Forensic signals align with natural camera capture. However, 'not detected' never guarantees authenticity."
         )

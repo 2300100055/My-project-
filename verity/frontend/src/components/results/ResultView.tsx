@@ -10,9 +10,9 @@ interface Props {
 }
 
 const VERDICT_LABEL: Record<Verdict, string> = {
-  likely_authentic: "Likely Authentic",
+  likely_authentic: "Normal / Likely Authentic",
   inconclusive: "Inconclusive",
-  likely_ai_generated: "Likely AI-Generated or Manipulated",
+  likely_ai_generated: "AI-Generated or Manipulated",
 };
 
 const SIGNAL_LABELS: Record<string, string> = {
@@ -93,6 +93,9 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
         <span className="font-semibold text-text-primary">Limitations: </span>
         {result.limitation_notice}
       </div>
+
+      {/* Capture & Origin Artifacts (How, When & Which Device) */}
+      <CaptureArtifactsCard signals={result.signals} />
 
       {/* Evidence Signals */}
       <div>
@@ -194,6 +197,48 @@ export function ResultView({ result, previewUrl, onReset }: Props) {
         <button onClick={onReset} className="btn-primary sm:ml-auto">
           Analyze Another File
         </button>
+      </div>
+    </div>
+  );
+}
+
+function CaptureArtifactsCard({ signals }: { signals: SignalResult[] }) {
+  const meta = signals.find((s) => s.signal === "metadata")?.details ?? {};
+  const prov = signals.find((s) => s.signal === "provenance")?.details ?? {};
+  const c2paStatus =
+    prov.c2pa_present === true
+      ? prov.valid
+        ? `Verified (${String(prov.claim_generator ?? "C2PA")})`
+        : "Present (validation failed)"
+      : "None found";
+
+  const rows = [
+    { label: "Device / Camera", value: String(meta.device ?? "Not recorded") },
+    { label: "When Taken", value: String(meta.taken_at ?? "Not recorded") },
+    { label: "How Captured", value: String(meta.capture_settings ?? "Not recorded") },
+    { label: "Software / Tool", value: String(meta.software ?? "Not recorded") },
+    { label: "Content Credentials", value: c2paStatus },
+    { label: "GPS Tag", value: meta.has_gps ? "Embedded in file" : "Not present" },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-[18px] font-semibold tracking-tight text-text-primary mb-3">
+        Capture &amp; Origin Artifacts
+      </h2>
+      <div className="card p-5 sm:p-6">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rows.map(({ label, value }) => (
+            <div key={label} className="bg-surface rounded-input p-3.5">
+              <dt className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                {label}
+              </dt>
+              <dd className="text-[14px] font-medium text-text-primary break-words">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </div>
   );

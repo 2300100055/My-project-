@@ -34,10 +34,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export async function uploadFile(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
-  return request<UploadResponse>("/api/v1/upload", {
+  // Bypass Next.js rewrite proxy for large video uploads (>10MB proxy limit)
+  const uploadBase =
+    API_BASE ||
+    (typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:8000` : "");
+  const res = await fetch(`${uploadBase}/api/v1/upload`, {
     method: "POST",
     body: form,
+    headers: { Accept: "application/json" },
   });
+  if (!res.ok) {
+    let errorMsg = `Upload failed: ${res.status}`;
+    try {
+      const body = await res.json();
+      errorMsg = body.message ?? errorMsg;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorMsg);
+  }
+  return res.json() as Promise<UploadResponse>;
 }
 
 export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {

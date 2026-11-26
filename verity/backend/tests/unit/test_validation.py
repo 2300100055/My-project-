@@ -14,7 +14,7 @@ from app.core.errors import (
     UnsupportedFileTypeError,
     CorruptFileError,
 )
-from app.utils.validation import detect_mime, MAGIC, IMAGE_TYPES, VIDEO_TYPES
+from app.utils.validation import detect_mime, IMAGE_TYPES, VIDEO_TYPES
 
 
 def _make_jpeg_header() -> bytes:
@@ -44,6 +44,18 @@ class TestDetectMime:
         # RIFF????WEBP
         header = b"RIFF" + b"\x00\x00\x00\x00" + b"WEBP" + b"\x00" * 48
         assert detect_mime(header) == "image/webp"
+
+    def test_mp4_ftyp_detected_as_video(self):
+        header = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 52
+        assert detect_mime(header, "clip.mp4") == "video/mp4"
+
+    def test_mov_ftyp_detected_as_quicktime(self):
+        header = b"\x00\x00\x00\x14ftypqt  " + b"\x00" * 52
+        assert detect_mime(header, "clip.mov") == "video/quicktime"
+
+    def test_heic_ftyp_detected_as_heic(self):
+        header = b"\x00\x00\x00\x18ftypheic" + b"\x00" * 52
+        assert detect_mime(header, "photo.heic") == "image/heic"
 
 
 class TestImageTypes:
