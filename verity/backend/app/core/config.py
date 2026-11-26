@@ -1,4 +1,5 @@
 """Application configuration via environment variables."""
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 
     # Storage
-    STORAGE_DIR: Path = Path("/tmp/verity")
+    STORAGE_DIR: Path = Path(tempfile.gettempdir()) / "verity"
     RETENTION_MINUTES: int = 60
 
     # Limits

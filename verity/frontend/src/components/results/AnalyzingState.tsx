@@ -56,10 +56,9 @@ export function AnalyzingState({ jobId, onResult, onError }: Props) {
 
   return (
     <div className="card p-10 text-center animate-fade-up">
-      {/* Animated ring */}
       <div className="relative mx-auto mb-8 w-24 h-24" aria-hidden="true">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" stroke="#E5E7EB" strokeWidth="6" fill="none" />
+          <circle cx="48" cy="48" r="40" stroke="#F5F5F7" strokeWidth="6" fill="none" />
           <circle
             cx="48" cy="48" r="40"
             stroke="#0071E3" strokeWidth="6" fill="none"
@@ -74,19 +73,18 @@ export function AnalyzingState({ jobId, onResult, onError }: Props) {
         </span>
       </div>
 
-      <h2 className="text-xl font-semibold mb-2">Analyzing…</h2>
+      <h2 className="text-[20px] font-semibold tracking-tight text-text-primary mb-2">Analyzing…</h2>
       <p className="text-text-secondary text-[15px] mb-8">{step}</p>
 
-      {/* Step list */}
       <ol className="text-left max-w-xs mx-auto space-y-3" aria-label="Analysis steps">
         {STEPS.map((s, i) => {
           const done = i < displayIdx;
           const active = i === displayIdx;
           return (
             <li key={s} className={`flex items-center gap-3 text-[14px] transition-all duration-300
-              ${done ? "text-text-secondary line-through" : active ? "text-text-primary font-medium" : "text-black/30"}`}>
+              ${done ? "text-text-secondary line-through" : active ? "text-text-primary font-medium" : "text-black/25"}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[11px]
-                ${done ? "bg-verdict-authentic text-white" : active ? "bg-accent text-white animate-pulse-ring" : "bg-black/10 text-transparent"}`}>
+                ${done ? "bg-text-primary text-white" : active ? "bg-accent text-white animate-pulse-ring" : "bg-surface text-transparent"}`}>
                 {done ? "✓" : i + 1}
               </span>
               {s}

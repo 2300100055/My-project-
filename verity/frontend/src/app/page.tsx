@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { AnalyzingState } from "@/components/results/AnalyzingState";
 import { ResultView } from "@/components/results/ResultView";
@@ -7,14 +7,26 @@ import type { AnalysisResult } from "@/lib/types";
 
 type AppState = "idle" | "analyzing" | "result" | "error";
 
-export default function HomePage() {
+interface Props {
+  initialMode?: "image" | "video";
+}
+
+export default function HomePage({ initialMode = "image" }: Props) {
   const [state, setState] = useState<AppState>("idle");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleUpload = useCallback((id: string) => {
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleUpload = useCallback((id: string, localPreviewUrl?: string) => {
     setJobId(id);
+    setPreviewUrl(localPreviewUrl ?? null);
     setState("analyzing");
   }, []);
 
@@ -33,34 +45,56 @@ export default function HomePage() {
     setResult(null);
     setError(null);
     setJobId(null);
+    setPreviewUrl(null);
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-56px)]">
+    <div className="min-h-[calc(100vh-56px)] bg-white">
       {state === "idle" && (
-        <section className="max-w-3xl mx-auto px-6 pt-20 pb-12 text-center">
-          {/* Hero */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-14 sm:pt-24 pb-16 text-center">
           <div className="animate-fade-up">
-            <h1 className="text-[44px] font-bold tracking-tight text-text-primary leading-tight mb-4">
+            <h1 className="text-[34px] sm:text-[52px] font-semibold tracking-[-0.03em] text-text-primary leading-[1.08] mb-4 sm:mb-5">
               Is this AI-generated?
             </h1>
-            <p className="text-[18px] text-text-secondary leading-relaxed mb-12 max-w-xl mx-auto">
-              Upload an image or video. Verity runs a multi-signal forensic analysis and gives you an honest, explainable answer.
+            <p className="text-[16px] sm:text-[20px] text-text-secondary font-normal leading-relaxed mb-10 sm:mb-12 max-w-xl mx-auto">
+              Upload an image or video for a transparent, multi-signal authenticity assessment.
             </p>
           </div>
 
-          <UploadZone onUpload={handleUpload} onError={handleError} />
+          <UploadZone initialMode={initialMode} onUpload={handleUpload} onError={handleError} />
 
-          {/* Limitation notice — always visible */}
           <p className="mt-8 text-[13px] text-text-secondary max-w-md mx-auto leading-relaxed">
-            Results are informational only. &ldquo;Not detected&rdquo; never means &ldquo;authentic.&rdquo; No result claims certainty.{" "}
-            <a href="/how-it-works" className="text-accent hover:underline">Learn how it works →</a>
+            Informational only. &ldquo;Not detected&rdquo; never means &ldquo;authentic.&rdquo;{" "}
+            <a href="/how-it-works" className="text-accent hover:underline font-medium">
+              How it works
+            </a>
           </p>
+
+          <div className="mt-16 sm:mt-20 pt-10 sm:pt-12 border-t border-black/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-8 text-left">
+            <div>
+              <h2 className="text-[14px] font-semibold text-text-primary mb-1">Provenance</h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                Verifies open C2PA Content Credentials and camera metadata when present.
+              </p>
+            </div>
+            <div>
+              <h2 className="text-[14px] font-semibold text-text-primary mb-1">Pixel Forensics</h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                Inspects error levels, spectral frequency artifacts, and sensor noise residuals.
+              </p>
+            </div>
+            <div>
+              <h2 className="text-[14px] font-semibold text-text-primary mb-1">Private by Design</h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                No account required. Uploads are never used for training and auto-delete in 60 minutes.
+              </p>
+            </div>
+          </div>
         </section>
       )}
 
       {state === "analyzing" && jobId && (
-        <section className="max-w-2xl mx-auto px-6 pt-20 pb-12">
+        <section className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-16">
           <AnalyzingState
             jobId={jobId}
             onResult={handleResult}
@@ -70,18 +104,27 @@ export default function HomePage() {
       )}
 
       {state === "result" && result && (
-        <section className="max-w-4xl mx-auto px-6 pt-10 pb-16">
-          <ResultView result={result} onReset={handleReset} />
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-10 sm:pt-12 pb-20">
+          <ResultView result={result} previewUrl={previewUrl} onReset={handleReset} />
         </section>
       )}
 
       {state === "error" && (
-        <section className="max-w-xl mx-auto px-6 pt-20 pb-12 text-center">
-          <div className="card p-10">
-            <div className="text-[40px] mb-4" role="img" aria-label="Error">⚠️</div>
-            <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-            <p className="text-text-secondary mb-6">{error}</p>
-            <button onClick={handleReset} className="btn-primary">Try again</button>
+        <section className="max-w-lg mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-16 text-center">
+          <div className="card p-8 sm:p-10">
+            <div className="w-11 h-11 rounded-full bg-surface text-text-primary flex items-center justify-center mx-auto mb-5">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 6v4.5M10 13.5h.01" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <h2 className="text-[20px] font-semibold tracking-tight text-text-primary mb-2">
+              Unable to analyze file
+            </h2>
+            <p className="text-[15px] text-text-secondary mb-7 leading-relaxed">{error}</p>
+            <button onClick={handleReset} className="btn-primary">
+              Try again
+            </button>
           </div>
         </section>
       )}

@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from uuid import UUID
 
+import cv2
 import ffmpeg  # type: ignore[import]
 import numpy as np
 import structlog
@@ -27,6 +29,16 @@ log = structlog.get_logger()
 
 
 async def _probe(path: str) -> dict:
+    if shutil.which("ffprobe") is None:
+        # OpenCV fallback when ffprobe is not installed
+        cap = cv2.VideoCapture(path)
+        try:
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0.0
+            duration = frame_count / fps if fps > 0 else 0.0
+            return {"format": {"duration": str(duration)}, "streams": [{"codec_type": "video"}]}
+        finally:
+            cap.release()
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, lambda: ffmpeg.probe(path))
 
@@ -34,7 +46,29 @@ async def _probe(path: str) -> dict:
 async def _extract_keyframes(
     path: str, fps: float, max_frames: int, out_dir: str
 ) -> list[str]:
-    """Extract frames at given fps, return list of frame paths."""
+    """Extract frames at given fps, using ffmpeg or OpenCV fallback."""
+    if shutil.which("ffmpeg") is None:
+        cap = cv2.VideoCapture(path)
+        saved: list[str] = []
+        try:
+            src_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            step = max(1, int(round(src_fps / max(fps, 0.1))))
+            idx = 0
+            count = 0
+            while count < max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % step == 0:
+                    out_file = os.path.join(out_dir, f"frame_{count + 1:06d}.jpg")
+                    cv2.imwrite(out_file, frame)
+                    saved.append(out_file)
+                    count += 1
+                idx += 1
+        finally:
+            cap.release()
+        return saved
+
     out_pattern = os.path.join(out_dir, "frame_%06d.jpg")
     loop = asyncio.get_event_loop()
 
