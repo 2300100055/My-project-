@@ -43,7 +43,7 @@ class ELADetector(BaseDetector):
                     orig_rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
 
             buf = io.BytesIO()
-            orig_rgb.save(buf, format="JPEG", quality=ELA_QUALITY)
+            orig_rgb.save(buf, format="JPEG", quality=90)
             buf.seek(0)
             recompressed = Image.open(buf).convert("RGB")
 
@@ -71,11 +71,10 @@ class ELADetector(BaseDetector):
                 corr = 0.0
 
             # Combine ELA richness:
-            # - High edge correlation + healthy dynamic range -> natural photo (0.65-0.95)
-            # - Very flat ELA (mean < 0.8 or std < 0.8) -> synthetic/over-smoothed (0.15-0.40)
-            richness = min(std_ela / 5.0, 1.0)
-            edge_score = min(corr / 0.45, 1.0)
-            dyn_score = min(dynamic_ratio / 2.5, 1.0)
+            # - Natural photos at Q=90 show edge-correlated variance (std ~ 2-8)
+            richness = min(std_ela / 3.2, 1.0)
+            edge_score = min(corr / 0.35, 1.0)
+            dyn_score = min(dynamic_ratio / 2.0, 1.0)
             score = self._safe_score(0.40 * richness + 0.40 * edge_score + 0.20 * dyn_score)
 
             # Save heatmap
@@ -98,7 +97,7 @@ class ELADetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=score,
-                confidence=0.75,
+                confidence=0.50,
                 weight=self.weight,
                 summary=summary,
                 details={

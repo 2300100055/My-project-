@@ -109,7 +109,7 @@ class MLClassifierDetector(BaseDetector):
             p_ai_calibrated = _temperature_scale(float(logit), settings.ML_TEMPERATURE)
             score = 1.0 - p_ai_calibrated  # invert: higher = more authentic
 
-            confidence = abs(score - 0.5) * 2  # confidence proportional to distance from 0.5
+            confidence = max(0.55, min(abs(score - 0.5) * 2.0, 0.95))
 
             if score < 0.35:
                 summary = f"ML classifier: {p_ai_calibrated:.0%} probability of AI generation (high confidence)."
@@ -121,8 +121,8 @@ class MLClassifierDetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=self._safe_score(score),
-                confidence=min(confidence, 0.9),
-                weight=self.weight,
+                confidence=confidence,
+                weight=0.45,
                 summary=summary,
                 details={
                     "model": settings.ML_MODEL_ID,

@@ -48,9 +48,9 @@ class NoiseResidualDetector(BaseDetector):
             crop = residual[: bh * 16, : bw * 16, :]
             blocks = crop.reshape(bh, 16, bw, 16, 3)
             block_stds = np.std(blocks, axis=(1, 3, 4))
-            noise_floor = float(np.percentile(block_stds, 25))
+            noise_floor = float(np.percentile(block_stds, 50))
             noise_p75 = float(np.percentile(block_stds, 75))
-            noise_spread = noise_p75 - noise_floor
+            noise_spread = noise_p75 - float(np.percentile(block_stds, 25))
 
             # 2. Channel independence: real camera Bayer/demosaic noise has lower R-B residual correlation
             r_res = residual[:, :, 0].ravel()
@@ -60,11 +60,9 @@ class NoiseResidualDetector(BaseDetector):
             else:
                 rb_corr = 1.0
 
-            # Real camera noise: noise_floor typically 1.0-6.0, spread > 1.5, rb_corr < 0.75
-            # Synthetic smooth image: noise_floor < 0.6 or spread < 0.8
-            floor_score = min(noise_floor / 3.0, 1.0)
-            spread_score = min(noise_spread / 3.5, 1.0)
-            channel_score = max(0.0, min(1.0, (0.95 - rb_corr) / 0.55))
+            floor_score = min(noise_floor / 2.5, 1.0)
+            spread_score = min(noise_spread / 2.8, 1.0)
+            channel_score = max(0.0, min(1.0, (0.95 - rb_corr) / 0.45))
 
             score = self._safe_score(0.45 * floor_score + 0.35 * spread_score + 0.20 * channel_score)
 
@@ -76,7 +74,7 @@ class NoiseResidualDetector(BaseDetector):
             return SignalResult(
                 signal=self.name,
                 score=score,
-                confidence=0.78,
+                confidence=0.55,
                 weight=self.weight,
                 summary=summary,
                 details={
